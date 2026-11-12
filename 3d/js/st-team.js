@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { C, damp, loadTexture, Spinner, softFloor, onWheel } from './lib.js';
 
-const PR = 3.2; // نصف قطر مسار الكروت فوق المنصة
+let PR = 3.2; // نصف قطر مسار الكروت فوق المنصة (أصغر على الجوال عشان الكروت الجانبية تبان وهي تلف)
 import { TEAM } from './content.js';
 
 const TWO = Math.PI * 2, wrap = (x) => ((x + Math.PI) % TWO + TWO) % TWO - Math.PI, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -61,7 +61,7 @@ export default function createTeam(ctx) {
   const st = {
     id: 'team', group, pickables, view: null, tools: nav,
     prepare() { if (loaded) return; loaded = true; items.forEach((it) => { const tx = loadTexture(`assets/img/team/${it.t.id}-photo.webp`, () => { it.front.map = tx; it.front.color.set(0xffffff); it.front.needsUpdate = true; }); }); },
-    resize() { st.view = ctx.mobile() ? { look: [0, 1.85, R + 0.3], dir: [0, 0.05, 1], fitW: 3.3, fitH: 3.5 } : { look: [0, 1.88, R + 0.3], dir: [0, 0.05, 1], fitW: 7.3, fitH: 3.7 }; },
+    resize() { PR = ctx.mobile() ? 1.7 : 3.2; floor.position.set(0, 0, R - PR); floor.scale.setScalar((PR + 0.45) / (0.64 * 4.6)); st.view = ctx.mobile() ? { look: [0, 1.85, R + 0.3], dir: [0, 0.05, 1], fitW: 3.3, fitH: 4.0 } : { look: [0, 1.88, R + 0.3], dir: [0, 0.05, 1], fitW: 7.3, fitH: 3.7 }; },
     enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // الكروت تنزلق لمكانها عند الدخول
     leave() { hover = sel = null; spin.target = null; layerOn = false; layer.style.display = 'none'; },
     update(dt) {

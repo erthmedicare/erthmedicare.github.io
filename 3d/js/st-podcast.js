@@ -5,7 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { C, damp, metal, glow, hdr, markPick, podium, Spinner, softFloor, crispLayer, onWheel } from './lib.js';
 import { PODCAST, CONTACT } from './content.js';
 
-const SW = 2.4, SH = 1.95, TWO = Math.PI * 2, PR = 3.2; // الكرت: صورة 16:9 فوق، وتحتها العنوان والضيف
+const SW = 2.4, SH = 1.95, TWO = Math.PI * 2; let PR = 3.2; // الكرت: صورة 16:9 فوق، وتحتها العنوان والضيف
 const wrap = (x) => ((x + Math.PI) % TWO + TWO) % TWO - Math.PI, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // وجه احتياطي داخل المشهد: يبان بس لحظة الانتقال بين الأقسام، والوجه الواضح هو عنصر HTML فوقه
@@ -63,7 +63,7 @@ export default function createPodcast(ctx) {
   bPrev.onclick = () => spin.stepBy(1); bNext.onclick = () => spin.stepBy(-1); who.onclick = () => { if (shown) play(shown); }; nav.append(bPrev, who, bNext);
   function play(it) { ui.openVideo(it.ep.yt, it.ep.title, it.ep.guest); }
   function layout() {
-    const m = ctx.mobile(), cz = R - PR; floor.position.set(0, 0, cz); floor.scale.setScalar(1.3);
+    const m = ctx.mobile(); PR = m ? 1.7 : 3.2; const cz = R - PR; floor.position.set(0, 0, cz); floor.scale.setScalar((PR + 0.3) / (0.64 * 4.2));
     // الكروت مرفوعة والمايك تحتها، عشان ما يغطي أحد منهم الثاني
     // الحلقات مرفوعة وتدور على محيط المنصة. المايك واقف على المنصة: على اللابتوب جنب الحلقة اللي في النص، وعلى الجوال تحتها
     micPod.visible = false; mic.rotation.y = -0.5;

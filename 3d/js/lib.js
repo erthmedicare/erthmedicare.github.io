@@ -223,7 +223,7 @@ export function fastPick(ray, meshes) {
 // حلقة تتحرك بالسحب مع قصور ذاتي، وتوقف على أقرب عنصر. ما تدور لحالها إلا لو انطلب (idle)
 // مكان العنصر على محيط المنصة الدائرية: sd بعده عن الأمام بعدد الخطوات (0 = قدام عند حافة المنصة الأمامية).
 // العناصر تمشي على دائرة المنصة نفسها (مركزها ونصف قطرها)، فالدوران يبان عجلة فوق المنصة مو شريط يمشي على الجنب.
-export function onWheel(slot, sd, front, PR, spread = 0.96, face = 0.72) { const th = sd * spread; slot.position.set(Math.sin(th) * PR, 0, front - PR + Math.cos(th) * PR); slot.rotation.y = th * face; }
+export function onWheel(slot, sd, front, PR, spread = 0.96, face = 0.85) { const th = sd * spread; slot.position.set(Math.sin(th) * PR, 0, front - PR + Math.cos(th) * PR); slot.rotation.y = th * face; }
 
 export class Spinner {
   constructor(step = 0, idle = 0) { this.angle = 0; this.vel = 0; this.target = null; this.step = step; this.idle = idle; this.since = 9; }
