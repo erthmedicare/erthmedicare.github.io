@@ -52,26 +52,26 @@ export function diamondTexture() {
   _diamond = new THREE.CanvasTexture(c); return _diamond;
 }
 
-// أرضية ناعمة: بقعة فاتحة تذوب في الخلفية وتستقبل ظل المجسم
-let _floor;
-function floorTexture() {
-  if (_floor) return _floor;
-  // بقعة ضوء ناعمة في النص، وحولها حلقات رفيعة مرتبة بلوني إرث (فيروزي وبنفسجي) تذوب للخارج
-  const N = 512, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), h = N / 2, gr = g.createRadialGradient(h, h, 0, h, h, h);
-  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.8)'); gr.addColorStop(0.8, 'rgba(255,255,255,.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, N, N);
-  [[0.56, '64,182,178', 0.34, 2.2], [0.70, '73,83,161', 0.24, 1.8], [0.83, '64,182,178', 0.16, 1.5], [0.94, '73,83,161', 0.09, 1.3]].forEach(([r, rgb, al, w]) => { g.beginPath(); g.arc(h, h, h * r, 0, Math.PI * 2); g.lineWidth = w; g.strokeStyle = 'rgba(' + rgb + ',' + al + ')'; g.stroke(); });
-  _floor = new THREE.CanvasTexture(c); _floor.colorSpace = THREE.SRGBColorSpace; _floor.anisotropy = 8; return _floor;
+// قاعدة عرض تحت المجسمات: قرص أبيض مصمت له سماكة حقيقية وحافة بفيروزي إرث، وتحته ظل ناعم واحد.
+// بدون خطوط رفيعة ولا نقوش ولا تدرجات داخل القرص: الخطوط الرفيعة تتقطع على شاشات الجوال وتبان كنقاط.
+let _shadow;
+function shadowTexture() {
+  if (_shadow) return _shadow;
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(60,68,140,.30)'); gr.addColorStop(0.62, 'rgba(60,68,140,.20)'); gr.addColorStop(0.82, 'rgba(60,68,140,.07)'); gr.addColorStop(1, 'rgba(60,68,140,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256); _shadow = new THREE.CanvasTexture(c); _shadow.colorSpace = THREE.SRGBColorSpace; return _shadow;
 }
-export function softFloor(r = 3, color = 0xffffff, opacity = 0.95) {
-  const m = new THREE.Mesh(new THREE.CircleGeometry(r, 72), new THREE.MeshLambertMaterial({ color, map: floorTexture(), transparent: true, opacity, depthWrite: false }));
-  m.rotation.x = -Math.PI / 2; m.receiveShadow = true; m.renderOrder = -2; return m;
+export function softFloor(r = 3, rim = C.teal) {
+  const g = new THREE.Group(), R = r * 0.64, H = 0.1;
+  const top = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, metalness: 0, envMapIntensity: 0.5 }), side = new THREE.MeshStandardMaterial({ color: rim, roughness: 0.45, metalness: 0, envMapIntensity: 0.6 });
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(R, R, H, 96), [side, top, top]); disc.position.y = -H / 2 - 0.002; g.add(disc);
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(R * 1.42, 64), new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false, toneMapped: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = -H - 0.006; sh.renderOrder = -2; sh.userData.noShadow = true; g.add(sh);
+  return g;
 }
-// منصة تحت كل مجسم: أرضية ناعمة وحلقة مضيئة رفيعة
+// منصة تحت المجسم الرئيسي: نفس القاعدة، وعليها شريط دائري مسطح بلون إرث يحدد مكان المجسم
 export function podium(r = 2, color = C.teal) {
-  const g = new THREE.Group();
-  g.add(softFloor(r * 1.9));
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.985, 0.013, 8, 128), glow(color, 1)); ring.rotation.x = Math.PI / 2; ring.position.y = 0.012; g.add(ring);
+  const g = softFloor(r * 1.9, color);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(r * 0.93, r, 96), new THREE.MeshBasicMaterial({ color, toneMapped: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.004; ring.userData.noShadow = true; g.add(ring);
   g.userData.ring = ring;
   return g;
 }
