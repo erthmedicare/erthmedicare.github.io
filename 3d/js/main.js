@@ -137,7 +137,7 @@ function viewTarget(st) {
 // الانتقال: مجسمات القسم الحالي تطلع من المسرح والقسم الجديد يدخل بحركة مختلفة في كل مرة.
 // الخلفية ما تتغطى أبداً، والحركة بين كل قسمين لها شكلها: طلوع، ابتعاد في الضباب، لفّة، انسحاب للجنب...
 const MOVE = { y: 3.4, z: -9, s: 0.9 }; // حركة وحدة خفيفة لكل الانتقالات: القسم ينسحب بهدوء، والتنويع يجي من دخلة كل قسم بمحتواه (ownIntro)
-let enterT = 9, shadowNow = true, trans = null;
+let enterT = 9, shadowNow = true, trans = null, railPt = null; const railT = { x: 0, y: 0, r: 8 };
 // المقدمة عند أول فتح للموقع: الكاميرا تبدأ قريبة من الحوض وتطلع مع العمود وهو يتركب فقرة فقرة، بعدين تبعد ويدخل الكلام
 const INTRO = 3.6; let introT = 9, introRate = 1;
 if (!location.hash || location.hash === '#hero') document.body.classList.add('intro');
@@ -152,6 +152,8 @@ function go(i) {
   ui.closePanel(); ui.hideTip(); setHover(null); switching = true; ui.setFxLabel(i); ui.fxOn(true);
   trans = { to: i, t: 0, phase: 0, mv: MOVE, dir: i > current ? 1 : -1 };
   fx && fx.play(i, i < current);
+  // خانة القسم الجديد في العمود الصغير: الفقرة تروح لها وتركب فيها آخر الانتقال
+  const di = document.querySelectorAll('#dots button i')[i], rc = di && di.getBoundingClientRect(); railPt = rc && rc.width ? { x: rc.left + rc.width / 2, y: rc.top + rc.height / 2, r: Math.max(6, rc.width * 0.5) } : null; if (fx) fx.target = null;
 }
 function runTrans(dt) {
   trans.t += dt; shadowNow = true;
@@ -271,7 +273,7 @@ function tick(dt) {
   const par = coarse ? 0 : camD * 0.022;
   camera.position.set(camPos.x + pointer.x * par, camPos.y + pointer.y * par * 0.6, camPos.z); camera.lookAt(camLook);
   camera.setViewOffset(W, H, (0.5 - stage.cx) * W, (0.5 - stage.cy) * H, W, H);
-  if (fx && fx.drawn) fx.camera.setViewOffset(W, H, (0.5 - stage.cx) * W, (0.5 - stage.cy) * H, W, H); // الفقرة في نص المسرح، مو نص الشاشة
+  if (fx && fx.drawn) { fx.camera.setViewOffset(W, H, (0.5 - stage.cx) * W, (0.5 - stage.cy) * H, W, H); if (railPt) { railT.x = ((railPt.x + (0.5 - stage.cx) * W) / W) * 2 - 1; railT.y = -(((railPt.y + (0.5 - stage.cy) * H) / H) * 2 - 1); railT.r = railPt.r; fx.target = railT; } } // الفقرة في نص المسرح، مو نص الشاشة
   bg.position.copy(camera.position); bg.material.uniforms.time.value = t;
   placeLights(st);
   camera.updateMatrixWorld();

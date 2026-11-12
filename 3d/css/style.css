@@ -444,3 +444,17 @@ body.intro-done :is(#dock, #rail) { animation: introFade 1s ease both; }
 /* العنوان الصغير لما يكون بدون كلام: تبقى الأيقونة لحالها */
 .kicker { min-height: 12px; }
 @media (max-width: 860px) { #menu button { font-size: 20px; gap: 14px; padding: 7px 12px; } #menu ol { gap: 2px; } }
+
+/* ── نسخة 25: العمود الصغير على جنب الشاشة. فقرة الانتقال تركب في خانة القسم وتنوّرها ── */
+#dots button.on i { animation: vseat .6s .78s var(--ease) both; }
+@keyframes vseat { 0% { transform: scale(.5); background: rgba(73,83,161,.24); } 55% { transform: scale(1.45); background: var(--teal); } 100% { transform: scale(1); background: var(--purple); } }
+@media (max-width: 860px) {
+  #rail { display: block; inset-inline-end: 5px; pointer-events: none; }
+  #dots { gap: 4px; }
+  #dots::before { left: 7px; top: 4px; bottom: 4px; width: 1.5px; }
+  #dots button { height: 11px; gap: 0; padding: 0; }
+  #dots button i { width: 14px; height: 8px; }
+  #dots button.on i { width: 18px; height: 11px; }
+  #dots button span { display: none; }
+  body.menu-open #rail, body.panel-open #rail { opacity: 0; }
+}

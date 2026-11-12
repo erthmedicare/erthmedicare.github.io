@@ -81,7 +81,7 @@ export function createFx({ skeleton, scene, textEl }) {
   let W = 1, H = 1, tanH = 0.34, t = 0, active = false, obj = null, dir = 1; const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, T = OUT + IN;
   const setText = (o, sc) => { if (!textEl) return; textEl.style.opacity = o; textEl.style.transform = `scale(${sc})`; };
   const api = {
-    scene: fxScene, camera: cam,
+    scene: fxScene, camera: cam, target: null, // target: مكان خانة القسم في العمود الصغير (إحداثيات الشاشة من -1 إلى 1، و r نصف قطرها بالبكسل)
     get active() { return active; },
     get drawn() { return active && !!obj; }, // فيه مجسم ينرسم فوق المشهد؟ (الاسم والرقم لحالهم ما يحتاجوا مرور رسم)
     showAll(v) { objs.forEach((o) => { if (o) o.visible = v; }); },
@@ -94,8 +94,12 @@ export function createFx({ skeleton, scene, textEl }) {
       if (obj) {
         const u = obj.userData, zFit = u.outer / (tanH * Math.min(W / H, 1)), q = 2 * p - 1, g = Math.sign(q) * Math.pow(Math.abs(q), 1.7), asp = tanH * (W / H);
         // حركة وحدة متصلة بدون توقف ولا تغيير مفاجئ في السرعة: الفقرة تعبر المسرح من جهة القسم الجاي، تهدّي في النص وهي أقرب شي، وتكمل. اللفّة بسرعة ثابتة
-        const z = -zFit * (3.5 + 2.0 * q * q), op = smoothstep(0, 0.24, p) * (1 - smoothstep(0.72, 1, p));
-        obj.position.set(dir * g * 0.5 * asp * Math.abs(z), (0.2 + 0.05 * (1 - q * q)) * tanH * Math.abs(z), z);
+        const z = -zFit * (3.5 + 2.0 * q * q), az = Math.abs(z), tg = api.target, k = tg ? smoothstep(0.56, 0.96, p) : 0, sd = tg ? (tg.x < 0 ? -1 : 1) : dir;
+        const op = smoothstep(0, 0.24, p) * (1 - (tg ? smoothstep(0.9, 1, p) : smoothstep(0.72, 1, p)));
+        // بعد ما تعبر المسرح تصغر وتروح لخانتها في العمود الصغير على جنب الشاشة (tg: مكان الخانة)، وهناك تركب وتنوّر الخانة
+        let x = sd * g * 0.5 * asp * az, y = (0.2 + 0.05 * (1 - q * q)) * tanH * az, sc = 1;
+        if (k > 0) { const sf = Math.max(0.02, (tg.r * 2 * tanH * az) / (u.outer * H)); x += (tg.x * asp * az - x) * k; y += (tg.y * tanH * az - y) * k; sc = 1 + (sf - 1) * k; }
+        obj.position.set(x, y, z); obj.scale.setScalar(sc);
         obj.rotation.set(0.3, dir * 1.15 * q + 0.15, dir * -0.12 * q);
         obj.visible = op > 0.004; boneMat.opacity = op; u.glow.material.opacity = op * 0.16;
       }
