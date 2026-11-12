@@ -27,7 +27,7 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 // نقيس سرعة الشاشة (60 أو 90 أو 120 فريم) من أول لحظة، عشان نعرف كم وقت معنا لكل فريم
 const probe = []; let probeLast = 0, probing = true;
 requestAnimationFrame(function p(t) { if (!probing) return; if (probeLast) probe.push(t - probeLast); probeLast = t; requestAnimationFrame(p); });
-const lowPct = (arr) => { const d = arr.filter((x) => x > 3 && x < 40).sort((a, b) => a - b); return d.length >= 45 ? d[Math.floor(d.length * 0.45)] / 1000 : 0; }; // الوسيط تقريباً: الفريمات المتلاحقة بعد أي تعليقة ما تخدعنا ونحسب الشاشة أسرع من حقيقتها
+const lowPct = (arr) => { const d = arr.filter((x) => x > 3 && x < 40).sort((a, b) => a - b); if (d.length < 45) return 0; const lo = d[Math.floor(d.length * 0.25)], md = d[Math.floor(d.length * 0.5)], hi = d[Math.floor(d.length * 0.75)]; return hi / lo < 1.22 ? md / 1000 : 0; }; // سرعة الشاشة: الوسيط، وبس لو الفريمات منتظمة فعلاً. لو متذبذبة ما نصدقها ونبقى على 60
 
 // ── المشهد ──
 const CPR = Math.min(devicePixelRatio || 1, coarse ? 2 : 1.5); // دقة الشاشة النهائية (الكلام والحبيبات). الجوال شاشته أكثف فياخذ سقف أعلى
@@ -142,10 +142,10 @@ const MOVES = [
 ];
 let enterT = 9, shadowNow = true, trans = null;
 // المقدمة عند أول فتح للموقع: الكاميرا تبدأ قريبة من الحوض وتطلع مع العمود وهو يتركب فقرة فقرة، بعدين تبعد ويدخل الكلام
-const INTRO = 3.2; let introT = 9, introRate = 1;
+const INTRO = 3.6; let introT = 9, introRate = 1;
 if (!location.hash || location.hash === '#hero') document.body.classList.add('intro');
 function endIntro() { const c = document.body.classList; if (c.contains('intro')) { c.remove('intro'); c.add('intro-done'); } }
-addEventListener('pointerdown', () => { if (introT < INTRO) introRate = 3.5; }, { passive: true }); // ضغطة وقت المقدمة تسرّعها
+addEventListener('pointerdown', () => { if (introT < INTRO) { introRate = 3.5; const s0 = stations[0]; s0 && s0.rush && s0.rush(); } }, { passive: true }); // ضغطة وقت المقدمة تسرّعها
 function pose(st, mv, k, flip) { // k: 0 في مكانه، 1 برا المسرح. flip يعكس الاتجاه الرأسي واللفّة (الدخول عكس الخروج)
   const g = st.group; if (!mv || k <= 0) { g.position.set(st.home, 0, 0); g.rotation.y = 0; g.scale.setScalar(1); return; }
   g.position.set(st.home + (mv.x || 0) * k, (mv.y || 0) * k * flip, (mv.z || 0) * k); g.rotation.y = (mv.ry || 0) * k * flip; g.scale.setScalar(1 + ((mv.s || 1) - 1) * k);
@@ -262,11 +262,11 @@ function tick(dt) {
   const sg = stageFor(st); for (const k of ['cx', 'cy', 'w', 'h']) stage[k] = damp(stage[k], sg[k], 4, dt);
   viewTarget(st);
   if (introT < INTRO) {
-    introT += dt * introRate; const u = clamp(introT / INTRO, 0, 1), k = u * u * (3 - 2 * u), r = 0.46 + 0.54 * k, lift = (1 - k) * 2.45;
-    const lx = tLook.x * k; // في اللقطة القريبة الكاميرا تتوسط العمود نفسه، وترجع لمكانها مع الابتعاد
-    camLook.set(lx, tLook.y + lift, tLook.z); // تبدأ عند أعلى العمود وتنزل معه وهو يتركب من فوق لتحت
-    camPos.set(lx + (tPos.x - tLook.x) * r + (1 - k) * 0.5, tLook.y + (tPos.y - tLook.y) * r + lift + (1 - k) * 0.55, tLook.z + (tPos.z - tLook.z) * r);
-    if (u > 0.58) endIntro();
+    introT += dt * introRate; const u = clamp(introT / INTRO, 0, 1), k = u * u * (3 - 2 * u), r = 0.5 + 0.5 * k, lift = (1 - k) * 2.7;
+    const lx = tLook.x * k; // الكاميرا تبدأ أقرب شوي وعند أعلى العمود، وتنزل معه بهدوء وهو يتركب من فوق لتحت
+    camLook.set(lx, tLook.y + lift, tLook.z);
+    camPos.set(lx + (tPos.x - tLook.x) * r + (1 - k) * 0.3, tLook.y + (tPos.y - tLook.y) * r + lift + (1 - k) * 0.3, tLook.z + (tPos.z - tLook.z) * r);
+    if (u > 0.7) endIntro();
   } else {
   camPos.x = damp(camPos.x, tPos.x, 2.8, dt); camPos.y = damp(camPos.y, tPos.y, 2.8, dt); camPos.z = damp(camPos.z, tPos.z, 2.8, dt); camLook.x = damp(camLook.x, tLook.x, 3.4, dt); camLook.y = damp(camLook.y, tLook.y, 3.4, dt); camLook.z = damp(camLook.z, tLook.z, 3.4, dt);
   }
@@ -300,8 +300,9 @@ async function start() {
   // فتح سريع: ما ننتظر إلا الهيكل (البداية تحتاجه). مجسمات العضلات والجلد تكمل تحميلها في الخلفية وقسم الجسم يتركب لما توصل،
   // وباقي الأقسام تتجهز لكرت الشاشة واحد واحد بعد المقدمة بدل ما الزائر ينتظرها كلها قدام شاشة تحميل.
   const pS = loadGLB('assets/models/skeleton.glb', prog(0.05, 0.9));
-  const pM = loadGLB('assets/models/muscles.glb').catch((e) => { console.warn('muscles', e); return null; });
-  const pK = loadGLB('assets/models/skin.glb').catch((e) => { console.warn('skin', e); return null; });
+  // مجسمات العضلات والجلد: ملفاتها تنزل الآن في الخلفية (تدخل ذاكرة المتصفح)، وتركيبها يتأجل لين تخلص المقدمة عشان ما يقطّع حركتها
+  if (!B64) ['muscles', 'skin'].forEach((n) => fetch(`assets/models/${n}.glb`).then((r) => r.arrayBuffer()).catch(() => {}));
+  const later = (n) => loadGLB(`assets/models/${n}.glb`).catch((e) => { console.warn(n, e); return null; });
   ctx.assets.skeleton = await pS; mark('skeleton');
   try { ctx.assets.skeleton.updateMatrixWorld(true); fx = createFx({ scene, skeleton: ctx.assets.skeleton, textEl: document.getElementById('fxText') }); } catch (e) { console.warn('fx', e); fx = null; }
   await Promise.race([document.fonts.ready.catch(() => {}), new Promise((r) => setTimeout(r, 1200))]); mark('fonts');
@@ -320,6 +321,8 @@ async function start() {
   // دقة البداية: آخر دقة ناسبت هذا الجهاز لو زارنا قبل، وإلا قيمة متوسطة والضابط يعدّلها خلال ثواني
   let saved = 0; try { saved = +localStorage.getItem('erthPR') || 0; } catch (e) { /* التخزين مقفول */ }
   setPR(saved ? clamp(saved, PR_MIN, CPR) : post.hasTimer ? Math.min(CPR, 1) : coarse ? CPR * 0.85 : Math.min(CPR, 1), true);
+  // أول فريمات تنرسم ورا شاشة الشعار: رفع المجسم لكرت الشاشة وتجهيز الرسم يصير هنا، مو والحركة شغالة
+  for (let i = 0; i < 3; i++) { renderer.shadowMap.needsUpdate = !coarse; try { draw(); } catch (e) { console.warn(e); } await new Promise((r) => { let ok = false; const f = () => { if (!ok) { ok = true; r(); } }; requestAnimationFrame(f); setTimeout(f, 70); }); }
   bar(1); mark('ready');
   window.__erth = { tick: (n = 60, dt = 1 / 30) => { for (let i = 0; i < n; i++) tick(dt); }, go, jump, ctx, pick, stations, pause: (v = true) => { paused = v; }, setPR, step, dbg: { post, key, scene, renderer }, get stats() { return { pr: +pr.toFixed(2), hz: Math.round(1 / refresh), gpuMs: +gpuAvg.toFixed(1), tier, div, budgetK: +budgetK.toFixed(2) }; }, get fx() { return fx; }, get current() { return current; } }; // للفحص والتجربة
   requestAnimationFrame(frame);
@@ -328,7 +331,7 @@ async function start() {
   // ── في الخلفية ──
   const calm = () => new Promise((res) => { const w = () => (introT < INTRO || switching || enterT < 1.2 ? setTimeout(w, 300) : res()); w(); }); // ننتظر لين تهدأ الحركة عشان التجهيز ما يقطّعها
   const ready = async (s0) => { s0.prepare && s0.prepare(); try { await renderer.compileAsync(s0.group, camera, scene); } catch (e) { console.warn(e); } };
-  Promise.all([pM, pK]).then(async ([m, k]) => { // قسم الجسم يتركب لما توصل مجسماته
+  calm().then(() => Promise.all([later('muscles'), later('skin')])).then(async ([m, k]) => { // قسم الجسم يتركب بعد المقدمة، لما توصل مجسماته
     ctx.assets.muscles = m; ctx.assets.skin = k; mark('models');
     if (current !== BODY) await calm();
     const old = stations[BODY], body = mount(createBody(ctx), BODY); body.resize && body.resize(); scene.remove(old.group); stations[BODY] = body; mark('body');
