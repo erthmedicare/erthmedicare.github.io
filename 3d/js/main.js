@@ -42,7 +42,7 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture; scene.environmentIntensity = 0.5;
 
 const bg = makeBackground(); scene.add(bg);
-const dust = makeDust(coarse ? 500 : 1100, -30, SP * (STATIONS.length - 1) + 30), DUST = dust.material.opacity; scene.add(dust);
+const dust = makeDust(coarse ? 500 : 1100, -30, SP * (STATIONS.length - 1) + 30), DUST = dust.material.opacity; scene.add(dust); dust.visible = false; // النقاط الطايرة انشالت: الخلفية نظيفة، والهوية في حلقات الأرضية
 // إضاءة استوديو نهارية: ضوء رئيسي يرمي ظل ناعم، تعبئة قوية عشان ما في جهة سوداء، ولمسة فيروزية من الخلف
 const key = new THREE.DirectionalLight(0xfff6ea, 2.3); const fill = new THREE.DirectionalLight(0xc3caff, 0.9); const rim = new THREE.DirectionalLight(C.teal, 1.1);
 key.castShadow = !coarse; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 2.2;
@@ -56,7 +56,7 @@ function placeLights(st) { // الإضاءة ثابتة على القسم، ما
 }
 
 // المشهد ينرسم في هدف واحد، ثم التوهج وتعتيم الأطراف والحبيبات في مرور أخير خفيف
-const post = createPost(renderer, { samples: coarse ? 2 : 4, bloom: false, vignette: [0.9, 0.91, 0.97], grain: 0.004 }); // بدون توهج: على الأبيض ما يبان ويثقّل
+const post = createPost(renderer, { samples: coarse ? 2 : 4, bloom: false, vignette: [0.9, 0.91, 0.97], grain: 0 }); // بدون توهج: على الأبيض ما يبان ويثقّل
 let fx = null; // الانتقال بين الأقسام، ينضاف بعد تحميل الهيكل
 
 // ── الجودة تتكيف مع الجهاز: نقيس وقت كرت الشاشة لكل فريم ونعدّل دقة المشهد عشان الحركة تبقى ناعمة ──

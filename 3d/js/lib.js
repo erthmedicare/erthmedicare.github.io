@@ -56,11 +56,14 @@ export function diamondTexture() {
 let _floor;
 function floorTexture() {
   if (_floor) return _floor;
-  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  // بقعة ضوء ناعمة في النص، وحولها حلقات رفيعة مرتبة بلوني إرث (فيروزي وبنفسجي) تذوب للخارج
+  const N = 512, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), h = N / 2, gr = g.createRadialGradient(h, h, 0, h, h, h);
   gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.8)'); gr.addColorStop(0.8, 'rgba(255,255,255,.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 256, 256); _floor = new THREE.CanvasTexture(c); _floor.colorSpace = THREE.SRGBColorSpace; return _floor;
+  g.fillStyle = gr; g.fillRect(0, 0, N, N);
+  [[0.56, '64,182,178', 0.34, 2.2], [0.70, '73,83,161', 0.24, 1.8], [0.83, '64,182,178', 0.16, 1.5], [0.94, '73,83,161', 0.09, 1.3]].forEach(([r, rgb, al, w]) => { g.beginPath(); g.arc(h, h, h * r, 0, Math.PI * 2); g.lineWidth = w; g.strokeStyle = 'rgba(' + rgb + ',' + al + ')'; g.stroke(); });
+  _floor = new THREE.CanvasTexture(c); _floor.colorSpace = THREE.SRGBColorSpace; _floor.anisotropy = 8; return _floor;
 }
-export function softFloor(r = 3, color = 0xf3f4fb, opacity = 0.9) {
+export function softFloor(r = 3, color = 0xffffff, opacity = 0.95) {
   const m = new THREE.Mesh(new THREE.CircleGeometry(r, 72), new THREE.MeshLambertMaterial({ color, map: floorTexture(), transparent: true, opacity, depthWrite: false }));
   m.rotation.x = -Math.PI / 2; m.receiveShadow = true; m.renderOrder = -2; return m;
 }
