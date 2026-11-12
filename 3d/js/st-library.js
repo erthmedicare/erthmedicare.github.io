@@ -5,7 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { C, damp, clamp, easeOut, Spinner, softFloor, crispLayer, onWheel } from './lib.js';
 import { EXERCISES, LIBRARY } from './content.js';
 
-const CW = 1.5, CH = 1.875, TEX_W = 600, TEX_H = 750, IMG_H = 430, PER = 5, GAPX = 0.22, PR = 1.2; // PER: عدد الكروت في كل رف
+const CW = 1.5, CH = 1.875, TEX_W = 600, TEX_H = 750, IMG_H = 430, PER = 5, GAPX = 0.22, PR = 1.5; // PER: عدد الكروت في كل رف
 const TWO = Math.PI * 2, wrap = (x) => ((x + Math.PI) % TWO + TWO) % TWO - Math.PI, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // غلاف التمرين: مساحة الصورة فوق (تدرج بألوان إرث ورقم التمرين لين تجهز الصورة)، والاسم والمنطقة تحت
@@ -68,7 +68,7 @@ export default function createLibrary(ctx) {
       if (carousel) { it.slot.position.set(Math.sin(it.a) * R, 0, Math.cos(it.a) * R); it.slot.rotation.y = it.a; }
       else { it.slot.position.set(0, 0, 0); it.slot.rotation.y = 0; it.base.set(((PER - 1) / 2 - it.col) * (CW + GAPX), ROW_Y[it.row] + CH / 2 + 0.015, 0.1); } // من اليمين لليسار
     });
-    ring.rotation.y = 0; floor.position.set(0, 0, carousel ? R - PR : 0.5); floor.scale.setScalar(carousel ? 0.53 : 1.1);
+    ring.rotation.y = 0; floor.position.set(0, 0, carousel ? R - PR : 0.5); floor.scale.setScalar(carousel ? 0.75 : 1.1);
     st.view = carousel ? { look: [0, 1.5, R + 0.3], dir: [0, 0.05, 1], fitW: 2.0, fitH: 2.45 } : { look: [0, 2.42, 0], dir: [0.09, 0.05, 1], fitW: ROW_W + 0.6, fitH: 5.4 };
   }
   const st = {

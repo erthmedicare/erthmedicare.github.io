@@ -176,7 +176,7 @@ export default function createTools(ctx) {
   const st = {
     id: 'tools', group, pickables, tools: nav,
     view: { look: [0, 1.25, R - 0.9], dir: [0, 0.2, 1], fitW: 8.6, fitH: 4.4 },
-    resize() { PR = ctx.mobile() ? 2.0 : 2.5; floor.position.set(0, 0, R - PR); floor.scale.setScalar((PR + 1.05) / (0.64 * 4.4)); st.view = ctx.mobile() ? { look: [0, 1.15, R + 0.2], dir: [0, 0.16, 1], fitW: 3.3, fitH: 3.5 } : { look: [0, 1.2, R + 0.2], dir: [0, 0.13, 1], fitW: 6.6, fitH: 3.6 }; },
+    resize() { PR = ctx.mobile() ? 2.2 : 2.5; floor.position.set(0, 0, R - PR); floor.scale.setScalar((PR + 1.15) / (0.64 * 4.4)); st.view = ctx.mobile() ? { look: [0, 1.15, R + 0.2], dir: [0, 0.16, 1], fitW: 3.3, fitH: 3.5 } : { look: [0, 1.2, R + 0.2], dir: [0, 0.13, 1], fitW: 6.6, fitH: 3.6 }; },
     enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // المنصة تدور لمكانها عند الدخول
     leave() { hover = sel = null; spin.target = null; },
     update(dt, t) {

@@ -283,7 +283,9 @@ function tick(dt) {
   ui.update();
   fx && fx.update(dt);
   // الظل يتحدّث فريم ويرتاح فريم: الفرق ما ينشاف، والحمل ينزل للنص. والقسم الثقيل يحدّث ظله بس لما يتحرك
-  if ((shadowNow || (st.shadowDirty ? st.shadowDirty() : frameNo % shadowEvery === 0))) { renderer.shadowMap.needsUpdate = true; shadowNow = false; }
+  // على الجوال: وقت الانتقال بين الأقسام الظل يخفت وما ينحسب (حسابه والمجسمات كلها تتحرك هو أثقل شي في الانتقال)، ويرجع أول ما يستقر القسم
+  if (coarse) key.shadow.intensity = damp(key.shadow.intensity, switching ? 0 : 1, switching ? 14 : 5, dt);
+  if (!(coarse && switching) && (shadowNow || (st.shadowDirty ? st.shadowDirty() : frameNo % shadowEvery === 0))) { renderer.shadowMap.needsUpdate = true; shadowNow = false; }
   frameNo++;
   draw();
 }
@@ -333,7 +335,17 @@ async function start() {
   { if (LI && LI.leave) LI.leave(); else document.getElementById('loader').classList.add('done'); const s0 = stations[current]; s0.enter && s0.enter(); enterT = 0; if (s0.ownIntro && document.body.classList.contains('intro')) introT = 0; else endIntro(); if (!s0.ownIntro) { trans = { to: current, t: 0, phase: 1, mv: MOVES[3], dir: 1 }; switching = true; ui.fxIn(true); } }
   // ── في الخلفية ──
   const calm = () => new Promise((res) => { const w = () => (introT < INTRO || switching || enterT < 1.2 ? setTimeout(w, 300) : res()); w(); }); // ننتظر لين تهدأ الحركة عشان التجهيز ما يقطّعها
-  const ready = async (s0) => { s0.prepare && s0.prepare(); try { await renderer.compileAsync(s0.group, camera, scene); } catch (e) { console.warn(e); } };
+  const warmRT = new THREE.WebGLRenderTarget(64, 64);
+  const ready = async (s0) => {
+    s0.prepare && s0.prepare(); try { await renderer.compileAsync(s0.group, camera, scene); } catch (e) { console.warn(e); }
+    await calm(); if (s0 === stations[current]) return;
+    try { // رسمة وحدة مخفية للقسم: ترفع مجسماته وصوره لكرت الشاشة الآن والزائر واقف، بدل ما تنرفع لحظة الانتقال وتثقّله
+      const cp = camera.position.clone(), cq = camera.quaternion.clone(), cur = stations[current];
+      cur.group.visible = false; s0.group.visible = true; viewTarget(s0); camera.position.copy(tPos); camera.lookAt(tLook); camera.updateMatrixWorld(); placeLights(s0); renderer.shadowMap.needsUpdate = true;
+      renderer.setRenderTarget(warmRT); renderer.render(scene, camera); renderer.setRenderTarget(null);
+      s0.group.visible = false; cur.group.visible = true; camera.position.copy(cp); camera.quaternion.copy(cq); camera.updateMatrixWorld(); viewTarget(cur); placeLights(cur); shadowNow = true;
+    } catch (e) { console.warn(e); }
+  };
   calm().then(() => Promise.all([later('skeleton'), later('muscles'), later('skin')])).then(async ([sk, m, k]) => { // قسم الجسم يتركب بعد المقدمة، لما توصل مجسماته
     if (!sk) throw new Error('skeleton'); ctx.assets.skeleton = sk; ctx.assets.muscles = m; ctx.assets.skin = k; mark('models');
     if (current !== BODY) await calm();

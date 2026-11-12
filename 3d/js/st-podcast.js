@@ -63,7 +63,7 @@ export default function createPodcast(ctx) {
   bPrev.onclick = () => spin.stepBy(1); bNext.onclick = () => spin.stepBy(-1); who.onclick = () => { if (shown) play(shown); }; nav.append(bPrev, who, bNext);
   function play(it) { ui.openVideo(it.ep.yt, it.ep.title, it.ep.guest); }
   function layout() {
-    const m = ctx.mobile(); PR = m ? 1.7 : 3.2; const cz = R - PR; floor.position.set(0, 0, cz); floor.scale.setScalar((PR + 0.3) / (0.64 * 4.2));
+    const m = ctx.mobile(); PR = m ? 2.1 : 3.2; const cz = R - PR; floor.position.set(0, 0, cz); floor.scale.setScalar((PR + (m ? 0.7 : 0.3)) / (0.64 * 4.2));
     // الكروت مرفوعة والمايك تحتها، عشان ما يغطي أحد منهم الثاني
     // الحلقات مرفوعة وتدور على محيط المنصة. المايك واقف على المنصة: على اللابتوب جنب الحلقة اللي في النص، وعلى الجوال تحتها
     micPod.visible = false; mic.rotation.y = -0.5;
