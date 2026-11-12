@@ -8,7 +8,7 @@ const ORDER = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 't1', 't2', 't3', 't4',
 const PICK = ['c3', 'c5', 'c7', 't3', 't6', 't9', 't12', 'l2', 'l4']; // فقرة لكل قسم
 const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 export const OUT = 0.46, IN = 0.8;
-const VERTEBRA = false; // الفقرة اللي كانت تمر بين الأقسام انشالت (قراره 2026-11-12): كل قسم يدخل بحركته من محتواه، والانتقال أخف بدون عنصر زيادة ينرسم فوق القسمين // // ثواني: خروج القسم الحالي، ودخول القسم الجديد
+const VERTEBRA = true; // الفقرة اللي كانت تمر بين الأقسام انشالت (قراره 2026-11-12): كل قسم يدخل بحركته من محتواه، والانتقال أخف بدون عنصر زيادة ينرسم فوق القسمين // // ثواني: خروج القسم الحالي، ودخول القسم الجديد
 
 // نلقى فتحة الفقرة: نسقط كل مثلثاتها على مستوى عمودي على اتجاه العمود، والفراغ المحاط بالعظم هو القناة
 function analyse(mesh, T) {
@@ -92,11 +92,11 @@ export function createFx({ skeleton, scene, textEl }) {
       // الرقم والاسم يظهروا والقسم القديم يطلع، ويختفوا والجديد يدخل
       setText(smoothstep(0.12, 0.36, p) * (1 - smoothstep(0.58, 0.8, p)), 0.94 + 0.06 * p);
       if (obj) {
-        const u = obj.userData, zFit = u.outer / (tanH * Math.min(W / H, 1)), a = easeOut(clamp(p / 0.42, 0, 1)), b = smoothstep(0.55, 1, p);
-        const z = -zFit * (5.2 - 1.9 * a + 2.4 * b), op = smoothstep(0, 0.16, p) * (1 - smoothstep(0.66, 0.98, p));
-        // تجي من الجهة اللي جاي منها القسم، توقف فوق الاسم لحظة وهي تلف، ثم تكمل طريقها
-        obj.position.set(dir * (1 - a) * -0.5 * tanH * (W / H) * Math.abs(z) + dir * b * 0.45 * tanH * (W / H) * Math.abs(z), 0.2 * tanH * Math.abs(z), z);
-        obj.rotation.set(0.5 - 0.25 * a, dir * (-1.1 * (1 - a) + 1.3 * b) + (p - 0.5) * 0.5, dir * 0.3 * (1 - a));
+        const u = obj.userData, zFit = u.outer / (tanH * Math.min(W / H, 1)), q = 2 * p - 1, g = Math.sign(q) * Math.pow(Math.abs(q), 1.7), asp = tanH * (W / H);
+        // حركة وحدة متصلة بدون توقف ولا تغيير مفاجئ في السرعة: الفقرة تعبر المسرح من جهة القسم الجاي، تهدّي في النص وهي أقرب شي، وتكمل. اللفّة بسرعة ثابتة
+        const z = -zFit * (3.5 + 2.0 * q * q), op = smoothstep(0, 0.24, p) * (1 - smoothstep(0.72, 1, p));
+        obj.position.set(dir * g * 0.5 * asp * Math.abs(z), (0.2 + 0.05 * (1 - q * q)) * tanH * Math.abs(z), z);
+        obj.rotation.set(0.3, dir * 1.15 * q + 0.15, dir * -0.12 * q);
         obj.visible = op > 0.004; boneMat.opacity = op; u.glow.material.opacity = op * 0.16;
       }
       if (t >= T) { active = false; if (obj) obj.visible = false; setText(0, 1); }
