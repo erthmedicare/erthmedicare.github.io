@@ -449,12 +449,14 @@ body.intro-done :is(#dock, #rail) { animation: introFade 1s ease both; }
 #dots button.on i { animation: vseat .6s .78s var(--ease) both; }
 @keyframes vseat { 0% { transform: scale(.5); background: rgba(73,83,161,.24); } 55% { transform: scale(1.45); background: var(--teal); } 100% { transform: scale(1); background: var(--purple); } }
 @media (max-width: 860px) {
-  #rail { display: block; inset-inline-end: 5px; pointer-events: none; }
-  #dots { gap: 4px; }
-  #dots::before { left: 7px; top: 4px; bottom: 4px; width: 1.5px; }
-  #dots button { height: 11px; gap: 0; padding: 0; }
-  #dots button i { width: 14px; height: 8px; }
-  #dots button.on i { width: 18px; height: 11px; }
+  /* على الجوال العمود الصغير أفقي داخل كبسولة التنقل السفلية (تحت اسم القسم): مكان محجوز أصلاً للتنقل، فما يجي على المجسمات ولا على الأسماء */
+  #rail { display: block; inset-inline-end: auto; left: 50%; top: auto; bottom: calc(22px + var(--safe-b) + 9px); transform: translateX(-50%); pointer-events: none; }
+  #dots { display: flex; gap: 5px; direction: rtl; align-items: center; }
+  #dots::before { left: 5px; right: 5px; top: 50%; bottom: auto; width: auto; height: 1.5px; transform: translateY(-50%); background: var(--edge); }
+  #dots button { height: 10px; gap: 0; padding: 0; }
+  #dots button i { width: 15px; height: 8px; }
+  #dots button.on i { width: 19px; height: 10px; }
   #dots button span { display: none; }
+  #counter { transform: translateY(-7px); }
   body.menu-open #rail, body.panel-open #rail { opacity: 0; }
 }
