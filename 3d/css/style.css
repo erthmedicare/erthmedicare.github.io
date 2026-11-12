@@ -429,3 +429,14 @@ body.intro-done :is(#dock, #rail) { animation: introFade 1s ease both; }
 .li-spine { perspective: 700px; }
 .li-v { position: absolute; transform-style: preserve-3d; will-change: transform, opacity; }
 .li-layer { will-change: transform, opacity; }
+
+/* العنوان الصغير فوق العنوان يختفي لو فاضي، والتوضيحات تحت الأقسام انشالت (التفاعل واضح بدونها) */
+.kicker:empty { display: none; }
+#hint { display: none !important; }
+/* كروت القوائم داخل اللوحات على الجوال: الرقم في عمود، والعنوان وتفصيله تحت بعض في العمود الثاني (كان التفصيل ينزل تحت الرقم ويخرّب الكرت) */
+@media (max-width: 860px) {
+  .p-list li { grid-template-columns: auto minmax(0, 1fr); }
+  .p-list li small { grid-column: 2; margin-top: 0; }
+  #panel .close { background: #fff; box-shadow: 0 4px 14px rgba(var(--shadow), .14); }
+  #panelBody { padding-top: 64px; }
+}

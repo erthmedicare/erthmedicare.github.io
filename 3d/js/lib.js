@@ -35,15 +35,19 @@ export const plastic = (color = 0xeef0f8, roughness = 0.4) => new THREE.MeshStan
 export const rubber = (color = 0x15172a, roughness = 0.75) => new THREE.MeshStandardMaterial({ color, metalness: 0, roughness, envMapIntensity: 0.5 });
 export const glow = (color = C.teal, k = 1) => new THREE.MeshBasicMaterial({ color: hdr(color, k), toneMapped: false });
 
-let _radial;
-export function radialTexture() {
-  if (_radial) return _radial;
-  const c = document.createElement('canvas'); c.width = c.height = 256;
-  const g = c.getContext('2d'); const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
-  _radial = new THREE.CanvasTexture(c); return _radial;
+// نسيج دائري ناعم محسوب بالأرقام مباشرة، مو مرسوم على كانفس: سفاري على الآيفون يرسم تدرجات الكانفس بتنقيط خفيف (عشان يخفي الخطوط)،
+// ولما التدرج يتكبّر على أرضية أو هالة يبان هذا التنقيط كنقاط ملونة تحت المجسمات.
+function radialData(stops, rgb = [255, 255, 255], N = 256) { // stops: [[r, alpha], ...] من المركز للحافة
+  const d = new Uint8Array(N * N * 4);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const r = Math.min(1, Math.hypot((x + 0.5) / N - 0.5, (y + 0.5) / N - 0.5) * 2); let k = 0; while (k < stops.length - 2 && r > stops[k + 1][0]) k++;
+    const A = stops[k], B = stops[k + 1], t = Math.min(1, Math.max(0, (r - A[0]) / (B[0] - A[0] || 1))), o = (y * N + x) * 4;
+    d[o] = rgb[0]; d[o + 1] = rgb[1]; d[o + 2] = rgb[2]; d[o + 3] = Math.round((A[1] + (B[1] - A[1]) * t) * 255);
+  }
+  const tx = new THREE.DataTexture(d, N, N, THREE.RGBAFormat); tx.colorSpace = THREE.SRGBColorSpace; tx.magFilter = THREE.LinearFilter; tx.minFilter = THREE.LinearMipmapLinearFilter; tx.generateMipmaps = true; tx.needsUpdate = true; return tx;
 }
+let _radial;
+export function radialTexture() { return _radial || (_radial = radialData([[0, 1], [0.35, 0.35], [1, 0]])); }
 let _diamond;
 export function diamondTexture() {
   if (_diamond) return _diamond;
@@ -55,12 +59,7 @@ export function diamondTexture() {
 // قاعدة عرض تحت المجسمات: قرص أبيض مصمت له سماكة حقيقية وحافة بفيروزي إرث، وتحته ظل ناعم واحد.
 // بدون خطوط رفيعة ولا نقوش ولا تدرجات داخل القرص: الخطوط الرفيعة تتقطع على شاشات الجوال وتبان كنقاط.
 let _shadow;
-function shadowTexture() {
-  if (_shadow) return _shadow;
-  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  gr.addColorStop(0, 'rgba(60,68,140,.30)'); gr.addColorStop(0.62, 'rgba(60,68,140,.20)'); gr.addColorStop(0.82, 'rgba(60,68,140,.07)'); gr.addColorStop(1, 'rgba(60,68,140,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 256, 256); _shadow = new THREE.CanvasTexture(c); _shadow.colorSpace = THREE.SRGBColorSpace; return _shadow;
-}
+function shadowTexture() { return _shadow || (_shadow = radialData([[0, 0.3], [0.62, 0.2], [0.82, 0.07], [1, 0]], [60, 68, 140])); }
 export function softFloor(r = 3, rim = C.teal) {
   const g = new THREE.Group(), R = r * 0.64, H = 0.1;
   const top = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, metalness: 0, envMapIntensity: 0.5 }), side = new THREE.MeshStandardMaterial({ color: rim, roughness: 0.45, metalness: 0, envMapIntensity: 0.6 });
