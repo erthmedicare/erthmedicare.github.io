@@ -127,7 +127,7 @@ export function textTexture(text, { size = 64, weight = 800, color = '#1b1f4b', 
 export function crystal(size = 1, tint = C.purple) {
   const g = new THREE.Group(), s = size * 0.9, flip = new THREE.Group();
   const mat = new THREE.MeshPhysicalMaterial({ color: tint, roughness: 0.34, metalness: 0, clearcoat: 0.55, clearcoatRoughness: 0.3, envMapIntensity: 0.9, transparent: true, opacity: 1 });
-  const tile = new THREE.Mesh(new RoundedBoxGeometry(s, s, size * 0.2, 4, size * 0.075), mat); tile.rotation.z = Math.PI / 4; tile.userData.noShadow = true;
+  const tile = new THREE.Mesh(new RoundedBoxGeometry(s, s, size * 0.2, 4, size * 0.075), mat); tile.rotation.z = Math.PI / 4; tile.userData.noShadow = true; tile.castShadow = true;
   flip.add(tile); g.add(flip);
   g.userData = { flip, tile, mat, size, open: 0 };
   return g;

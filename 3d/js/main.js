@@ -34,7 +34,7 @@ const CPR = Math.min(devicePixelRatio || 1, coarse ? 2 : 1.5); // دقة الش�
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance' });
 renderer.setPixelRatio(CPR); renderer.setSize(W, H, false);
 renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.0; // ألوان صريحة على خلفية فاتحة
-renderer.shadowMap.enabled = !coarse; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.enabled = true; // الظل شغال على كل الأجهزة: هو اللي يعطي المجسمات عمق ويثبتها على منصتها renderer.shadowMap.type = THREE.PCFShadowMap; renderer.shadowMap.autoUpdate = false;
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0xffffff, 0.02); scene.fog.color.setRGB(1.06, 1.07, 1.12); // نفس لون الخلفية
 const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 900);
@@ -45,14 +45,14 @@ const bg = makeBackground(); scene.add(bg);
 const dust = makeDust(coarse ? 500 : 1100, -30, SP * (STATIONS.length - 1) + 30), DUST = dust.material.opacity; scene.add(dust); dust.visible = false; // النقاط الطايرة انشالت: الخلفية نظيفة، والهوية في حلقات الأرضية
 // إضاءة استوديو نهارية: ضوء رئيسي يرمي ظل ناعم، تعبئة قوية عشان ما في جهة سوداء، ولمسة فيروزية من الخلف
 const key = new THREE.DirectionalLight(0xfff6ea, 2.3); const fill = new THREE.DirectionalLight(0xc3caff, 0.9); const rim = new THREE.DirectionalLight(C.teal, 1.1);
-key.castShadow = !coarse; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 2.2;
-Object.assign(key.shadow.camera, { left: -4.5, right: 4.5, top: 4.5, bottom: -4.5, near: 1, far: 40 });
+key.castShadow = true; key.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 2.2;
+Object.assign(key.shadow.camera, { left: -5.6, right: 5.6, top: 5.6, bottom: -5.6, near: 1, far: 44 });
 scene.add(key, key.target, fill, fill.target, rim, rim.target, new THREE.HemisphereLight(0xffffff, 0xc4c9e6, 1.5));
-function placeLights(st) { // الإضاءة ثابتة على القسم، ما تتحرك مع الكاميرا
-  const x = st.home;
-  key.position.set(x + 5.5, 9, 7.5); key.target.position.set(x, 2, 0);
-  fill.position.set(x - 8, 3, 5); fill.target.position.set(x, 2, 0);
-  rim.position.set(x - 4, 6, -9); rim.target.position.set(x, 2, 0);
+function placeLights(st) { // الإضاءة ثابتة على القسم، ما تتحرك مع الكاميرا. تتوجه لمكان المجسمات الفعلي في القسم (عشان ظلها يقع داخل مساحة الظل)
+  const x = st.home, z = st.view && st.view.look ? st.view.look[2] * 0.75 : 0;
+  key.position.set(x + 5.5, 9, 7.5 + z); key.target.position.set(x, 2, z);
+  fill.position.set(x - 8, 3, 5 + z); fill.target.position.set(x, 2, z);
+  rim.position.set(x - 4, 6, -9 + z); rim.target.position.set(x, 2, z);
 }
 
 // المشهد ينرسم في هدف واحد، ثم التوهج وتعتيم الأطراف والحبيبات في مرور أخير خفيف
@@ -61,7 +61,7 @@ let fx = null; // الانتقال بين الأقسام، ينضاف بعد ت�
 
 // ── الجودة تتكيف مع الجهاز: نقيس وقت كرت الشاشة لكل فريم ونعدّل دقة المشهد عشان الحركة تبقى ناعمة ──
 const PR_MIN = Math.min(CPR, 0.6);
-let pr = Math.min(CPR, 1), refresh = 1 / 60, div = 1, cool = 1.2, gpuAvg = 0, gpuPrev = 0, lagT = 0, tier = 0, shadowEvery = 2, budgetK = 0.6;
+let pr = Math.min(CPR, 1), refresh = 1 / 60, div = 1, cool = 1.2, gpuAvg = 0, gpuPrev = 0, lagT = 0, tier = 0, shadowEvery = coarse ? 3 : 2, budgetK = 0.6;
 const memo = [], recent = []; let prCeil = CPR, calmT = 0;
 function setPR(v, force) { v = clamp(v, PR_MIN, CPR); if (!force && Math.abs(v - pr) < 0.03) return false; pr = v; post.setSize(W * pr, H * pr); return true; }
 post.onSample = (ms) => { const g = Math.max(ms, gpuPrev); gpuPrev = ms; gpuAvg = gpuAvg ? gpuAvg + (g - gpuAvg) * 0.12 : g; };
@@ -283,7 +283,7 @@ function tick(dt) {
   ui.update();
   fx && fx.update(dt);
   // الظل يتحدّث فريم ويرتاح فريم: الفرق ما ينشاف، والحمل ينزل للنص. والقسم الثقيل يحدّث ظله بس لما يتحرك
-  if (!coarse && (shadowNow || (st.shadowDirty ? st.shadowDirty() : frameNo % shadowEvery === 0))) { renderer.shadowMap.needsUpdate = true; shadowNow = false; }
+  if ((shadowNow || (st.shadowDirty ? st.shadowDirty() : frameNo % shadowEvery === 0))) { renderer.shadowMap.needsUpdate = true; shadowNow = false; }
   frameNo++;
   draw();
 }
@@ -322,7 +322,7 @@ async function start() {
   let saved = 0; try { saved = +localStorage.getItem('erthPR') || 0; } catch (e) { /* التخزين مقفول */ }
   setPR(saved ? clamp(saved, PR_MIN, CPR) : post.hasTimer ? Math.min(CPR, 1) : coarse ? CPR * 0.85 : Math.min(CPR, 1), true);
   // أول فريمات تنرسم ورا شاشة الشعار: رفع المجسم لكرت الشاشة وتجهيز الرسم يصير هنا، مو والحركة شغالة
-  for (let i = 0; i < 3; i++) { renderer.shadowMap.needsUpdate = !coarse; try { draw(); } catch (e) { console.warn(e); } await new Promise((r) => { let ok = false; const f = () => { if (!ok) { ok = true; r(); } }; requestAnimationFrame(f); setTimeout(f, 70); }); }
+  for (let i = 0; i < 3; i++) { renderer.shadowMap.needsUpdate = true; try { draw(); } catch (e) { console.warn(e); } await new Promise((r) => { let ok = false; const f = () => { if (!ok) { ok = true; r(); } }; requestAnimationFrame(f); setTimeout(f, 70); }); }
   bar(1); mark('ready');
   window.__erth = { tick: (n = 60, dt = 1 / 30) => { for (let i = 0; i < n; i++) tick(dt); }, go, jump, ctx, pick, stations, pause: (v = true) => { paused = v; }, setPR, step, dbg: { post, key, scene, renderer }, get stats() { return { pr: +pr.toFixed(2), hz: Math.round(1 / refresh), gpuMs: +gpuAvg.toFixed(1), tier, div, budgetK: +budgetK.toFixed(2) }; }, get fx() { return fx; }, get current() { return current; } }; // للفحص والتجربة
   // شعار الفتح يكمل تركيبه أول (لو الموقع جهز قبله)، بعدين يطير لمكانه في أعلى الصفحة والقسم يبدأ حركته من أولها

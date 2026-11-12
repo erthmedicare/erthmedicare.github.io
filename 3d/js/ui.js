@@ -67,11 +67,15 @@ export const fxIn = (v) => body.classList.toggle('fx-in', v); // القسم ال
 let stageCx = -1, stageCy = -1, stageCache = null, stageKey = '', stageUntil = 0, stageNext = 0, panelRect = null;
 export function stageDirty(ms = 1500) { stageUntil = performance.now() + ms; stageNext = 0; panelRect = null; }
 addEventListener('resize', () => stageDirty());
+// عمود الكلام يتغير حجمه بعد أول رسم (الخط العربي يتحمل، السطور تنكسر...). كل ما تغيّر نعيد قياس مساحة المجسمات، في أي قسم ينفتح عليه الموقع
+if (window.ResizeObserver) { const ro = new ResizeObserver(() => stageDirty(900)); ro.observe(title); const tl = document.getElementById('stationTools'); tl && ro.observe(tl); }
 export function stageRect(mobile, hasTools) {
   const now = performance.now(), key = `${mobile}|${hasTools}|${state.panelOpen}`;
-  if (stageCache && key === stageKey && (now < stageNext || now > stageUntil + 120)) return stageCache;
+  if (stageCache && key === stageKey && now < stageNext) return stageCache;
   if (key !== stageKey) { stageKey = key; stageUntil = Math.max(stageUntil, now + 1500); }
-  stageNext = now + 90;
+  // بعد أي تغيير نقيس كل 90 جزء من الثانية، وفي الوضع العادي كل نص ثانية. القياس الدوري هذا ضمان: مهما كان توقيت تحميل الخطوط أو الكلام
+  // على أي جهاز، مساحة المجسمات تتصحح خلال نص ثانية بدل ما تبقى على قياس قديم (كان هذا سبب تراكب الكلام مع المجسم بعد تحديث الصفحة)
+  stageNext = now + (now < stageUntil ? 90 : 500);
   const W = innerWidth, H = innerHeight; let r;
   if (mobile) {
     const tb = title.getBoundingClientRect();

@@ -1,6 +1,6 @@
 // من نحن: سبع نقاط بشكل نقطة الثاء في شعار إرث (معيّن بألوان الهوية)، كل نقطة تنفتح على جزء من هوية إرث.
 import * as THREE from 'three';
-import { crystal, setCrystalOpen, markPick, C, damp, clamp, easeBack, loadTexture } from './lib.js';
+import { crystal, setCrystalOpen, markPick, C, damp, clamp, easeBack, loadTexture, softFloor } from './lib.js';
 import { ABOUT } from './content.js';
 
 export default function createAbout(ctx) {
@@ -16,10 +16,11 @@ export default function createAbout(ctx) {
   const mark = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.97), new THREE.MeshBasicMaterial({ map: loadTexture('assets/img/erth-mark.webp'), transparent: true, opacity: 0.09, depthWrite: false }));
   mark.position.set(0, 3.3, -3.2); group.add(mark);
 
+  const floor = softFloor(7.2); floor.position.set(0, 0.02, -0.4); group.add(floor); // منصة تحت النقاط تستقبل ظلها وتعطيها عمق
   let hover = null, sel = null, active = false, cs = 1, inT = 9;
   const world = new THREE.Vector3(), scr = {};
   function layout() {
-    const m = ctx.mobile(); cs = m ? 0.8 : 1;
+    const m = ctx.mobile(); cs = m ? 0.8 : 1; floor.scale.setScalar(m ? 0.6 : 1.12);
     const rows = m ? [[-1.25, 1.25], [-2.3, 0, 2.3], [-1.25, 1.25]] : [[-4.5, -1.5, 1.5, 4.5], [-3.0, 0, 3.0]];
     const ys = m ? [6.3, 3.75, 1.2] : [4.75, 1.65]; let k = 0;
     rows.forEach((r, ri) => r.forEach((x) => { items[k].base.set(x, ys[ri], (k % 2) * -0.5); k++; }));
