@@ -423,7 +423,7 @@ body.intro-done :is(#dock, #rail) { animation: introFade 1s ease both; }
 #loader.li { background: none; }
 #loader.li img { display: none; }
 .li-veil { position: absolute; inset: 0; background: radial-gradient(90% 70% at 50% 42%, #ffffff 0%, var(--night) 70%); }
-.li-box { position: relative; height: min(52svh, 420px); max-height: 68vw; will-change: transform; }
+.li-box { position: relative; height: min(52svh, 420px); max-height: 86vw; will-change: transform; }
 .li-layer, .li-spine { position: absolute; inset: 0; }
 .li-layer svg, .li-v svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
 .li-spine { perspective: 700px; }

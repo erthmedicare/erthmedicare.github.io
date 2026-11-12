@@ -2,15 +2,17 @@
 // فقرات الشعار تنزل من فوق وحدة وحدة وهي تلف وتستقر، بعدها الخط، ثم الاسم العربي، ثم الإنجليزي.
 // لما يجهز الموقع، الشعار يطير لمكانه في أعلى الصفحة والعمود ثلاثي الأبعاد يبدأ يتركب.
 // هذا الملف صغير ومستقل، فيشتغل قبل ما تتحمل باقي ملفات الموقع الثقيلة.
+import P from './logo-parts.js';
+
 const loader = document.getElementById('loader');
 const api = (window.__logoIntro = { ready: Promise.resolve(), leave: null });
 const el = (cls) => { const d = document.createElement('div'); d.className = cls; return d; };
 
-if (!loader || matchMedia('(prefers-reduced-motion: reduce)').matches || !Element.prototype.animate) { loader && loader.classList.add('static'); }
+const CALM = matchMedia('(prefers-reduced-motion: reduce)').matches; // اللي مفعّل تقليل الحركة في جهازه: نفس الترتيب لكن بدون لف ولا سقوط
+if (!loader || !Element.prototype.animate) { loader && loader.classList.add('static'); }
 else api.ready = run().catch((e) => { console.warn('logo intro', e); loader.classList.remove('li'); loader.classList.add('static'); api.leave = null; });
 
 async function run() {
-  const P = await fetch('assets/logo-parts.json').then((r) => { if (!r.ok) throw new Error('logo parts'); return r.json(); });
   const NS = 'http://www.w3.org/2000/svg', FW = P.viewBox[2], FH = P.viewBox[3], PAD = 1.2, TEAL = P.colors.teal, PURPLE = P.colors.purple;
   const svg = (vb, parts, fill) => {
     const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', vb.join(' ')); s.setAttribute('aria-hidden', 'true');
@@ -23,14 +25,14 @@ async function run() {
 
   // التوقيت بالثواني
   const V = 0.068, V_END = P.vertebrae.length * V + 0.45, C0 = V_END - 0.1, CS = 0.07, AR = C0 + P.calligraphy.length * CS + 0.25, EN = AR + 0.28, END = EN + 0.6;
-  const anims = [], drop = Math.round(innerHeight * 0.62);
+  const anims = [], vs = [], drop = Math.round(innerHeight * 0.62);
   // الخط: كل قطعة تنزلق من اليمين وتظهر، وحدة ورا الثانية
   P.calligraphy.forEach((p, i) => { const d = layer([p], PURPLE); box.append(d); anims.push(d.animate([{ opacity: 0, transform: 'translateX(16px)' }, { opacity: 1, transform: 'none' }], { duration: 600, delay: (C0 + i * CS) * 1000, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'both' })); });
   // الفقرات: كل فقرة طبقة لحالها في مكانها بالضبط، تنزل من فوق وهي تلف وتستقر بنطّة خفيفة
   P.vertebrae.forEach((p, i) => {
     const x = p.box[0] - PAD, y = p.box[1] - PAD, w = p.box[2] + PAD * 2, h = p.box[3] + PAD * 2, d = el('li-v');
     d.style.cssText = `left:${(x / FW) * 100}%;top:${(y / FH) * 100}%;width:${(w / FW) * 100}%;height:${(h / FH) * 100}%`; d.append(svg([x, y, w, h], [p], TEAL)); spine.append(d);
-    anims.push(d.animate([{ transform: `translateY(${-drop}px) rotateX(260deg) rotateY(${i % 2 ? 140 : -140}deg) rotateZ(${i % 2 ? -18 : 18}deg) scale(1.25)`, opacity: 0 }, { opacity: 1, offset: 0.28 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: i * V * 1000, easing: 'cubic-bezier(.22,1.28,.36,1)', fill: 'both' }));
+    vs.push(d); anims.push(d.animate([{ transform: CALM ? 'translateY(-14px)' : `translateY(${-drop}px) rotateX(260deg) rotateY(${i % 2 ? 140 : -140}deg) rotateZ(${i % 2 ? -18 : 18}deg) scale(1.25)`, opacity: 0 }, { opacity: 1, offset: 0.28 }, { transform: 'none', opacity: 1 }], { duration: 900, delay: i * V * 1000, easing: 'cubic-bezier(.22,1.28,.36,1)', fill: 'both' }));
   });
   box.append(spine);
   // الاسم العربي ثم الإنجليزي
@@ -39,7 +41,10 @@ async function run() {
 
   // مكان الشعار (الفقرات والخط بدون الأسماء) داخل الشعار الكامل، عشان يطير لشعار أعلى الصفحة بنفس المقاس
   const mk = [...P.vertebrae, ...P.calligraphy], x0 = Math.min(...mk.map((p) => p.box[0])) - PAD, y0 = Math.min(...mk.map((p) => p.box[1])) - PAD, x1 = Math.max(...mk.map((p) => p.box[0] + p.box[2])) + PAD, y1 = Math.max(...mk.map((p) => p.box[1] + p.box[3])) + PAD;
+  let wave = 0, wave0 = 0; // لو الموقع لسه يتحمل بعد ما اكتمل الشعار: موجة خفيفة تمر على الفقرات من فوق لتحت كل شوي، عشان الشعار ما يوقف ثابت
+  const ripple = () => { vs.forEach((d, i) => d.animate([{ transform: 'none' }, { transform: CALM ? 'translateY(-2px)' : 'translateY(-7px) scale(1.14)' }, { transform: 'none' }], { duration: 620, delay: i * 48, easing: 'cubic-bezier(.3,0,.3,1)' })); };
   api.leave = () => new Promise((res) => {
+    clearInterval(wave); clearTimeout(wave0);
     let ended = false; const end = () => { if (ended) return; ended = true; nav && (nav.style.visibility = ''); loader.classList.add('done'); loader.style.display = 'none'; res(); };
     loader.style.pointerEvents = 'none';
     const nav = document.querySelector('#top .brand img'), L = box.getBoundingClientRect(), N = nav ? nav.getBoundingClientRect() : null;
@@ -57,4 +62,5 @@ async function run() {
     const t = setTimeout(res, END * 1000), skip = () => { clearTimeout(t); anims.forEach((a) => { try { a.finish(); } catch (e) { /* خلصت */ } }); res(); };
     loader.addEventListener('pointerdown', skip, { once: true }); addEventListener('keydown', skip, { once: true });
   });
+  wave = setInterval(ripple, 1700); wave0 = setTimeout(ripple, 400);
 }

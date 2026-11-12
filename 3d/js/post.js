@@ -10,6 +10,9 @@ const mat = (fragmentShader, uniforms, extra = {}) => new THREE.ShaderMaterial({
 export function createPost(renderer, { samples = 4, strength = 0.16, threshold = 1.0, bloom = true, vignette = [0.42, 0.42, 0.42], grain = 0.012 } = {}) {
   const gl = renderer.getContext(), quad = new FullScreenQuad(null);
   const rt = (s = 0, depth = false) => new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: s, depthBuffer: depth, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+  // صورة سوداء صغيرة تنقرأ مكان التوهج لما يكون مقفول. بدونها المرور الأخير يقرأ من ذاكرة ما انكتب فيها شي،
+  // وعلى الآيفون هذي الذاكرة فيها قيم عشوائية تطلع نقاط ملونة على الشاشة.
+  const black = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); black.needsUpdate = true;
   let sceneRT = rt(samples, true); const L = [0, 1, 2, 3, 4, 5].map(() => rt()); let levels = L.length, sw = 4, sh = 4;
 
   // السطوع: ناخذ بس اللي أقوى من الحد (الأجزاء المضيئة)، ونصغّر للنص
@@ -61,7 +64,7 @@ export function createPost(renderer, { samples = 4, strength = 0.16, threshold =
         quad.material = up;
         for (let i = levels - 2; i >= 0; i--) { up.uniforms.tex.value = L[i + 1].texture; up.uniforms.px.value.set(1 / L[i + 1].width, 1 / L[i + 1].height); renderer.setRenderTarget(L[i]); quad.render(renderer); }
       }
-      quad.material = fin; fin.uniforms.tScene.value = sceneRT.texture; fin.uniforms.tBloom.value = L[0].texture; fin.uniforms.uBloom.value = api.bloom && levels > 1 ? strength : 0; fin.uniforms.time.value = time;
+      quad.material = fin; fin.uniforms.tScene.value = sceneRT.texture; const glowOn = api.bloom && levels > 1; fin.uniforms.tBloom.value = glowOn ? L[0].texture : black; fin.uniforms.uBloom.value = glowOn ? strength : 0; fin.uniforms.time.value = time;
       renderer.setRenderTarget(null); quad.render(renderer);
       renderer.autoClear = true;
       if (cur) { gl.endQuery(ext.TIME_ELAPSED_EXT); pending.push(cur); cur = null; }

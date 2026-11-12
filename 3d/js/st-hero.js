@@ -14,7 +14,7 @@ export default function createHero(ctx) {
   const { ui } = ctx;
   const group = new THREE.Group(), pivot = new THREE.Group(), spine = new THREE.Group();
   group.add(pivot); pivot.add(spine);
-  const skel = ctx.assets.skeleton; skel.updateMatrixWorld(true);
+  const skel = ctx.assets.spine || ctx.assets.skeleton; skel.updateMatrixWorld(true);
   const pickables = [], parts = [];
   const vCol = new THREE.Color(0xd2c5a8), dCol = new THREE.Color(0x2f9c98);
 

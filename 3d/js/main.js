@@ -299,12 +299,12 @@ async function start() {
   const bar = (v) => { loadbar.style.width = `${Math.round(v * 100)}%`; }, prog = (a, b) => (p) => bar(a + (b - a) * p);
   // فتح سريع: ما ننتظر إلا الهيكل (البداية تحتاجه). مجسمات العضلات والجلد تكمل تحميلها في الخلفية وقسم الجسم يتركب لما توصل،
   // وباقي الأقسام تتجهز لكرت الشاشة واحد واحد بعد المقدمة بدل ما الزائر ينتظرها كلها قدام شاشة تحميل.
-  const pS = loadGLB('assets/models/skeleton.glb', prog(0.05, 0.9));
+  const pS = loadGLB('assets/models/spine.glb', prog(0.05, 0.9)); // نسخة خفيفة فيها العمود والحوض بس (خُمس حجم الهيكل الكامل): هذا كل اللي تحتاجه البداية
   // مجسمات العضلات والجلد: ملفاتها تنزل الآن في الخلفية (تدخل ذاكرة المتصفح)، وتركيبها يتأجل لين تخلص المقدمة عشان ما يقطّع حركتها
-  if (!B64) ['muscles', 'skin'].forEach((n) => fetch(`assets/models/${n}.glb`).then((r) => r.arrayBuffer()).catch(() => {}));
+  if (!B64) ['skeleton', 'muscles', 'skin'].forEach((n) => fetch(`assets/models/${n}.glb`).then((r) => r.arrayBuffer()).catch(() => {}));
   const later = (n) => loadGLB(`assets/models/${n}.glb`).catch((e) => { console.warn(n, e); return null; });
-  ctx.assets.skeleton = await pS; mark('skeleton');
-  try { ctx.assets.skeleton.updateMatrixWorld(true); fx = createFx({ scene, skeleton: ctx.assets.skeleton, textEl: document.getElementById('fxText') }); } catch (e) { console.warn('fx', e); fx = null; }
+  ctx.assets.spine = await pS; mark('skeleton');
+  try { ctx.assets.spine.updateMatrixWorld(true); fx = createFx({ scene, skeleton: ctx.assets.spine, textEl: document.getElementById('fxText') }); } catch (e) { console.warn('fx', e); fx = null; }
   await Promise.race([document.fonts.ready.catch(() => {}), new Promise((r) => setTimeout(r, 1200))]); mark('fonts');
   const makers = [createHero, createAbout, createBody, createTools, createTeam, createPodcast, createLibrary, createPartners, createContact], BODY = makers.indexOf(createBody);
   const mount = (st, i) => { st.home = i * SP; st.group.position.x = st.home; st.group.visible = false; scene.add(st.group); shadowize(st.group); return st; };
@@ -332,8 +332,8 @@ async function start() {
   // ── في الخلفية ──
   const calm = () => new Promise((res) => { const w = () => (introT < INTRO || switching || enterT < 1.2 ? setTimeout(w, 300) : res()); w(); }); // ننتظر لين تهدأ الحركة عشان التجهيز ما يقطّعها
   const ready = async (s0) => { s0.prepare && s0.prepare(); try { await renderer.compileAsync(s0.group, camera, scene); } catch (e) { console.warn(e); } };
-  calm().then(() => Promise.all([later('muscles'), later('skin')])).then(async ([m, k]) => { // قسم الجسم يتركب بعد المقدمة، لما توصل مجسماته
-    ctx.assets.muscles = m; ctx.assets.skin = k; mark('models');
+  calm().then(() => Promise.all([later('skeleton'), later('muscles'), later('skin')])).then(async ([sk, m, k]) => { // قسم الجسم يتركب بعد المقدمة، لما توصل مجسماته
+    if (!sk) throw new Error('skeleton'); ctx.assets.skeleton = sk; ctx.assets.muscles = m; ctx.assets.skin = k; mark('models');
     if (current !== BODY) await calm();
     const old = stations[BODY], body = mount(createBody(ctx), BODY); body.resize && body.resize(); scene.remove(old.group); stations[BODY] = body; mark('body');
     if (current === BODY) { memo[BODY] = null; activate(); shadowNow = true; } else await ready(body);
