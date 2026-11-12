@@ -403,8 +403,8 @@ body.fx-on .crisp, body.fx-in .crisp { opacity: 0; transition: opacity .12s ease
 
 /* ── المقدمة عند أول فتح: الكلام والأزرار ينتظروا لين العمود يتركب، بعدين يدخلوا واحد ورا الثاني ── */
 body.intro #title > * { opacity: 0; transform: translateY(28px); transition: none; }
-body.intro :is(#top, #dock, #rail) { opacity: 0; }
-body.intro-done :is(#top, #dock, #rail) { animation: introFade 1s ease both; }
+body.intro :is(#dock, #rail) { opacity: 0; }
+body.intro-done :is(#dock, #rail) { animation: introFade 1s ease both; }
 @keyframes introFade { from { opacity: 0; } to { opacity: 1; } }
 #loader { transition: opacity .6s ease, visibility .6s; }
 #loader img { transition: transform .8s var(--ease); }
@@ -416,3 +416,16 @@ body.intro-done :is(#top, #dock, #rail) { animation: introFade 1s ease both; }
 #loader .bar, #loader p { display: none; }
 #loader.err p { display: block; }
 #loader { transition: opacity .45s ease, visibility .45s; }
+
+/* شعار الفتح المتحرك: يتركب من أجزائه (فقرات، خط، اسم) ثم يطير لشعار أعلى الصفحة */
+#loader img { opacity: 0; animation: none; }
+#loader.static img { opacity: 1; }
+#loader.li { background: none; }
+#loader.li img { display: none; }
+.li-veil { position: absolute; inset: 0; background: radial-gradient(90% 70% at 50% 42%, #ffffff 0%, var(--night) 70%); }
+.li-box { position: relative; height: min(52svh, 420px); max-height: 68vw; will-change: transform; }
+.li-layer, .li-spine { position: absolute; inset: 0; }
+.li-layer svg, .li-v svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
+.li-spine { perspective: 700px; }
+.li-v { position: absolute; transform-style: preserve-3d; will-change: transform, opacity; }
+.li-layer { will-change: transform, opacity; }

@@ -325,9 +325,10 @@ async function start() {
   for (let i = 0; i < 3; i++) { renderer.shadowMap.needsUpdate = !coarse; try { draw(); } catch (e) { console.warn(e); } await new Promise((r) => { let ok = false; const f = () => { if (!ok) { ok = true; r(); } }; requestAnimationFrame(f); setTimeout(f, 70); }); }
   bar(1); mark('ready');
   window.__erth = { tick: (n = 60, dt = 1 / 30) => { for (let i = 0; i < n; i++) tick(dt); }, go, jump, ctx, pick, stations, pause: (v = true) => { paused = v; }, setPR, step, dbg: { post, key, scene, renderer }, get stats() { return { pr: +pr.toFixed(2), hz: Math.round(1 / refresh), gpuMs: +gpuAvg.toFixed(1), tier, div, budgetK: +budgetK.toFixed(2) }; }, get fx() { return fx; }, get current() { return current; } }; // للفحص والتجربة
+  // شعار الفتح يكمل تركيبه أول (لو الموقع جهز قبله)، بعدين يطير لمكانه في أعلى الصفحة والقسم يبدأ حركته من أولها
+  const LI = window.__logoIntro; if (LI && LI.ready) { try { await LI.ready; } catch (e) { /* نكمل بدونه */ } } mark('logo');
   requestAnimationFrame(frame);
-  // الافتتاحية: شاشة الشعار تختفي فوراً، والقسم يبدأ حركته من أولها
-  { document.getElementById('loader').classList.add('done'); const s0 = stations[current]; s0.enter && s0.enter(); enterT = 0; if (s0.ownIntro && document.body.classList.contains('intro')) introT = 0; else endIntro(); if (!s0.ownIntro) { trans = { to: current, t: 0, phase: 1, mv: MOVES[3], dir: 1 }; switching = true; ui.fxIn(true); } }
+  { if (LI && LI.leave) LI.leave(); else document.getElementById('loader').classList.add('done'); const s0 = stations[current]; s0.enter && s0.enter(); enterT = 0; if (s0.ownIntro && document.body.classList.contains('intro')) introT = 0; else endIntro(); if (!s0.ownIntro) { trans = { to: current, t: 0, phase: 1, mv: MOVES[3], dir: 1 }; switching = true; ui.fxIn(true); } }
   // ── في الخلفية ──
   const calm = () => new Promise((res) => { const w = () => (introT < INTRO || switching || enterT < 1.2 ? setTimeout(w, 300) : res()); w(); }); // ننتظر لين تهدأ الحركة عشان التجهيز ما يقطّعها
   const ready = async (s0) => { s0.prepare && s0.prepare(); try { await renderer.compileAsync(s0.group, camera, scene); } catch (e) { console.warn(e); } };
