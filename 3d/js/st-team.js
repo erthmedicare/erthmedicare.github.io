@@ -1,7 +1,9 @@
 // الأخصائيون: كروت ثلاثية الأبعاد فيها الصورة فقط، على حلقة تدور بالسحب. الضغط يفتح المؤهلات والحجز.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { C, damp, loadTexture, Spinner, softFloor } from './lib.js';
+import { C, damp, loadTexture, Spinner, softFloor, onWheel } from './lib.js';
+
+const PR = 3.2; // نصف قطر مسار الكروت فوق المنصة
 import { TEAM } from './content.js';
 
 const TWO = Math.PI * 2, wrap = (x) => ((x + Math.PI) % TWO + TWO) % TWO - Math.PI, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -45,7 +47,7 @@ export default function createTeam(ctx) {
     slot.position.set(Math.sin(a) * R, 0, Math.cos(a) * R); slot.rotation.y = a; slot.add(card); ring.add(slot);
     const it = { t, a, slot, card, front, frame, k: 0 }; card.userData.pick = it; pickables.push(card); items.push(it);
   });
-  const floor = softFloor(4.6); floor.position.set(0, 0, R); group.add(floor);
+  const floor = softFloor(4.6); floor.position.set(0, 0, R - PR); floor.scale.setScalar(1.24); group.add(floor);
 
   let hover = null, sel = null, loaded = false, shown = null; const world = new THREE.Vector3(), scr = {};
   // أسهم التنقل، وبينها اسم الأخصائي اللي في النص (الاسم برا الصورة)
@@ -63,14 +65,15 @@ export default function createTeam(ctx) {
     enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // الكروت تنزلق لمكانها عند الدخول
     leave() { hover = sel = null; spin.target = null; layerOn = false; layer.style.display = 'none'; },
     update(dt) {
-      spin.update(dt, !!hover); ring.rotation.y = spin.angle;
+      spin.update(dt, !!hover); ring.rotation.y = 0;
       let near = null, nd = 9;
       for (const it of items) {
         const on = it === hover || it === sel; it.k = damp(it.k, on ? 1 : 0, 7, dt);
         const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d);
+        onWheel(it.slot, wrap(it.a + spin.angle) / spin.step, R, PR);
         if (d < nd) { nd = d; near = it; }
         it.slot.visible = vis > 0.01;
-        it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3 + it.k * 0.05) * vis)); it.card.position.z = it.k * 0.3 + front * 0.8; it.card.position.y = 1.85 + it.k * 0.06;
+        it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3 + it.k * 0.05) * vis)); it.card.position.z = it.k * 0.3 + front * 0.35; it.card.position.y = 1.85 + it.k * 0.06;
         it.frame.material.opacity = front * 0.55 + it.k * 0.45; if (it.front.map) it.front.color.setScalar(0.8 + front * 0.2);
         if (vis > 0.01) { const w = photoAt(it, 0.8 + front * 0.2); if (w && d < 0.02 && it.k < 0.02 && Math.abs(w - bw) > bw * 0.08) setBase(Math.round(w)); } else photoOff(it);
       }

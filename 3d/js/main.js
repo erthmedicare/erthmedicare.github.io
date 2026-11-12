@@ -144,7 +144,7 @@ let enterT = 9, shadowNow = true, trans = null;
 // المقدمة عند أول فتح للموقع: الكاميرا تبدأ قريبة من الحوض وتطلع مع العمود وهو يتركب فقرة فقرة، بعدين تبعد ويدخل الكلام
 const INTRO = 3.6; let introT = 9, introRate = 1;
 if (!location.hash || location.hash === '#hero') document.body.classList.add('intro');
-function endIntro() { const c = document.body.classList; if (c.contains('intro')) { c.remove('intro'); c.add('intro-done'); } }
+function endIntro() { const c = document.body.classList; if (c.contains('intro')) { c.remove('intro'); c.add('intro-done'); } ui.stageDirty(2500); }
 addEventListener('pointerdown', () => { if (introT < INTRO) { introRate = 3.5; const s0 = stations[0]; s0 && s0.rush && s0.rush(); } }, { passive: true }); // ضغطة وقت المقدمة تسرّعها
 function pose(st, mv, k, flip) { // k: 0 في مكانه، 1 برا المسرح. flip يعكس الاتجاه الرأسي واللفّة (الدخول عكس الخروج)
   const g = st.group; if (!mv || k <= 0) { g.position.set(st.home, 0, 0); g.rotation.y = 0; g.scale.setScalar(1); return; }
@@ -327,6 +327,8 @@ async function start() {
   window.__erth = { tick: (n = 60, dt = 1 / 30) => { for (let i = 0; i < n; i++) tick(dt); }, go, jump, ctx, pick, stations, pause: (v = true) => { paused = v; }, setPR, step, dbg: { post, key, scene, renderer }, get stats() { return { pr: +pr.toFixed(2), hz: Math.round(1 / refresh), gpuMs: +gpuAvg.toFixed(1), tier, div, budgetK: +budgetK.toFixed(2) }; }, get fx() { return fx; }, get current() { return current; } }; // للفحص والتجربة
   // شعار الفتح يكمل تركيبه أول (لو الموقع جهز قبله)، بعدين يطير لمكانه في أعلى الصفحة والقسم يبدأ حركته من أولها
   const LI = window.__logoIntro; if (LI && LI.ready) { try { await LI.ready; } catch (e) { /* نكمل بدونه */ } } mark('logo');
+  // مساحة المجسمات تنقاس من جديد الآن: القياس الأول صار قبل ما ينكتب عنوان القسم وتتحمل الخطوط، فكان الكلام يتراكب مع المجسم عند أول فتح
+  ui.stageDirty(4000); document.fonts.ready.then(() => ui.stageDirty(2500)).catch(() => {}); addEventListener('load', () => ui.stageDirty(2500)); addEventListener('orientationchange', () => ui.stageDirty(2500));
   requestAnimationFrame(frame);
   { if (LI && LI.leave) LI.leave(); else document.getElementById('loader').classList.add('done'); const s0 = stations[current]; s0.enter && s0.enter(); enterT = 0; if (s0.ownIntro && document.body.classList.contains('intro')) introT = 0; else endIntro(); if (!s0.ownIntro) { trans = { to: current, t: 0, phase: 1, mv: MOVES[3], dir: 1 }; switching = true; ui.fxIn(true); } }
   // ── في الخلفية ──

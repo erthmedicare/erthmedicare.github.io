@@ -2,7 +2,9 @@
 // التأشير على الأداة يقرّبها ويفرد أشكالها، والضغط يفتح تفاصيلها.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { C, damp, metal, plastic, rubber, glow, hdr, markPick, Spinner, radialTexture, softFloor } from './lib.js';
+import { C, damp, metal, plastic, rubber, glow, hdr, markPick, Spinner, radialTexture, softFloor, onWheel } from './lib.js';
+
+const PR = 2.5; // نصف قطر مسار الأدوات فوق المنصة
 import { TOOLS, TOOL_IMAGES } from './content.js';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -147,13 +149,13 @@ export default function createTools(ctx) {
   const { ui } = ctx, { P } = ui;
   const group = new THREE.Group(), ring = new THREE.Group(), pickables = [], items = [], spin = new Spinner((Math.PI * 2) / TOOLS.length), R = 4.3;
   group.add(ring);
-  const floor = softFloor(4.4); floor.position.set(0, 0, R); group.add(floor);
+  const floor = softFloor(4.4); floor.position.set(0, 0, R - PR); floor.scale.setScalar(1.26); group.add(floor);
 
   TOOLS.forEach((tool, i) => {
     const a = (i / TOOLS.length) * Math.PI * 2, built = BUILD[tool.id](), slot = new THREE.Group(), lift = new THREE.Group();
     slot.position.set(Math.sin(a) * R, 0, Math.cos(a) * R); slot.rotation.y = a; ring.add(slot); slot.add(lift); lift.add(built.g); built.g.scale.setScalar(1.25);
     const ped = mesh(new THREE.CylinderGeometry(0.92, 0.98, 0.1, 48), new THREE.MeshLambertMaterial({ color: 0xe9ebf7 }), 0, 0.05, 0); ped.receiveShadow = true; slot.add(ped);
-    const pr = mesh(new THREE.TorusGeometry(0.92, 0.01, 6, 80), glow(C.teal, 1.2), 0, 0.102, 0); pr.rotation.x = Math.PI / 2; slot.add(pr);
+    const pr = mesh(new THREE.RingGeometry(0.84, 0.92, 80), glow(C.teal, 1.2), 0, 0.103, 0); pr.rotation.x = -Math.PI / 2; slot.add(pr); // شريط مسطح بدل الحلقة الرفيعة (الرفيعة تتقطع على الجوال)
     const it = { tool, a, slot, lift, built, k: 0, ring: pr }; markPick(built.g, it, pickables); ped.userData.pick = it; pickables.push(ped); items.push(it);
     built.anim && built.anim(0, 0);
   });
@@ -178,13 +180,14 @@ export default function createTools(ctx) {
     enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // المنصة تدور لمكانها عند الدخول
     leave() { hover = sel = null; spin.target = null; },
     update(dt, t) {
-      spin.update(dt, !!hover); ring.rotation.y = spin.angle;
+      spin.update(dt, !!hover); ring.rotation.y = 0;
       for (const it of items) {
         const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d);
+        onWheel(it.slot, wrap(it.a + spin.angle) / spin.step, R, PR);
         it.slot.visible = vis > 0.01; it.slot.scale.setScalar(Math.max(0.001, vis));
         // الأداة اللي في النص تنفرد لحالها، والباقي تنفرد عند التأشير
         const on = it === hover || it === sel || (front > 0.93 && !hover && !sel); it.k = damp(it.k, on ? 1 : 0, 5, dt); const k = it.k;
-        it.lift.position.y = k * 0.16 + Math.sin(t * 1.1 + it.a * 3) * 0.02; it.lift.position.z = front * 0.5; it.lift.scale.setScalar((0.78 + front * 0.42) * (1 + k * 0.06)); it.lift.rotation.y = Math.sin(t * 0.6 + it.a) * 0.12 * (1 - k);
+        it.lift.position.y = k * 0.16 + Math.sin(t * 1.1 + it.a * 3) * 0.02; it.lift.position.z = front * 0.15; it.lift.scale.setScalar((0.78 + front * 0.42) * (1 + k * 0.06)); it.lift.rotation.y = Math.sin(t * 0.6 + it.a) * 0.12 * (1 - k);
         it.ring.material.color.set(C.teal).lerp(_pur, k);
         if (k > 0.001 || it.dirty) {
           for (const p of it.built.parts) { p.obj.position.lerpVectors(p.p0, p.p1, k); p.obj.scale.lerpVectors(p.s0, p.s1, k); e.set(p.r0.x + (p.r1.x - p.r0.x) * k, p.r0.y + (p.r1.y - p.r0.y) * k, p.r0.z + (p.r1.z - p.r0.z) * k); p.obj.rotation.copy(e); }

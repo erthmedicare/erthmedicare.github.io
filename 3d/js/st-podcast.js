@@ -2,10 +2,10 @@
 // الضغط على الحلقة يشغّلها داخل الموقع. المايك مجسم القسم، والضغط عليه يفتح القناة.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { C, damp, metal, glow, hdr, markPick, podium, Spinner, softFloor, crispLayer } from './lib.js';
+import { C, damp, metal, glow, hdr, markPick, podium, Spinner, softFloor, crispLayer, onWheel } from './lib.js';
 import { PODCAST, CONTACT } from './content.js';
 
-const SW = 2.4, SH = 1.95, TWO = Math.PI * 2; // الكرت: صورة 16:9 فوق، وتحتها العنوان والضيف
+const SW = 2.4, SH = 1.95, TWO = Math.PI * 2, PR = 3.2; // الكرت: صورة 16:9 فوق، وتحتها العنوان والضيف
 const wrap = (x) => ((x + Math.PI) % TWO + TWO) % TWO - Math.PI, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // وجه احتياطي داخل المشهد: يبان بس لحظة الانتقال بين الأقسام، والوجه الواضح هو عنصر HTML فوقه
@@ -63,10 +63,12 @@ export default function createPodcast(ctx) {
   bPrev.onclick = () => spin.stepBy(1); bNext.onclick = () => spin.stepBy(-1); who.onclick = () => { if (shown) play(shown); }; nav.append(bPrev, who, bNext);
   function play(it) { ui.openVideo(it.ep.yt, it.ep.title, it.ep.guest); }
   function layout() {
-    const m = ctx.mobile(); floor.position.set(0, 0, R); floor.scale.setScalar(m ? 0.7 : 1.1);
+    const m = ctx.mobile(), cz = R - PR; floor.position.set(0, 0, cz); floor.scale.setScalar(1.3);
     // الكروت مرفوعة والمايك تحتها، عشان ما يغطي أحد منهم الثاني
-    if (m) { cardY = 2.3; mic.position.set(0, 0, R + 0.5); mic.scale.setScalar(0.4); mic.rotation.y = -0.4; micPod.position.set(0, 0, R + 0.5); micPod.scale.setScalar(0.4); st.view = { look: [0, 1.78, R + 0.3], dir: [0, 0.04, 1], fitW: 2.85, fitH: 3.55 }; }
-    else { cardY = 2.2; mic.position.set(-2.0, 0, R + 0.4); mic.scale.setScalar(0.5); mic.rotation.y = Math.PI * 0.85; micPod.position.set(-2.0, 0, R + 0.4); micPod.scale.setScalar(0.42); st.view = { look: [0, 1.82, R + 0.3], dir: [0, 0.04, 1], fitW: 6.6, fitH: 3.8 }; }
+    // الحلقات مرفوعة وتدور على محيط المنصة. المايك واقف على المنصة: على اللابتوب جنب الحلقة اللي في النص، وعلى الجوال تحتها
+    micPod.visible = false; mic.rotation.y = -0.5;
+    if (m) { cardY = 2.45; mic.position.set(0, 0, R + 0.05); mic.scale.setScalar(0.5); st.view = { look: [0, 1.9, R + 0.3], dir: [0, 0.04, 1], fitW: 2.85, fitH: 3.8 }; }
+    else { cardY = 2.2; mic.position.set(1.62, 0, R - 0.35); mic.scale.setScalar(0.52); st.view = { look: [0, 1.82, R + 0.3], dir: [0, 0.04, 1], fitW: 6.6, fitH: 3.8 }; }
   }
   const st = {
     id: 'podcast', group, pickables, view: null, tools: nav, resize: layout,
@@ -74,11 +76,12 @@ export default function createPodcast(ctx) {
     enter() { ui.warmVideo(); const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // الكروت تنزلق لمكانها عند الدخول
     leave() { hover = null; spin.target = null; crisp.hide(); },
     update(dt, t) {
-      spin.update(dt, !!hover); ring.rotation.y = spin.angle; crisp.show(); let near = null, nd = 9;
+      spin.update(dt, !!hover); ring.rotation.y = 0; crisp.show(); let near = null, nd = 9;
       for (const it of items) {
         it.k = damp(it.k, it === hover ? 1 : 0, 8, dt);
         const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d); if (d < nd) { nd = d; near = it; }
-        it.slot.visible = vis > 0.01; it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3 + it.k * 0.03) * vis)); it.card.position.set(0, cardY + Math.sin(t * 0.8 + it.i * 1.3) * 0.02, front * 0.7);
+        onWheel(it.slot, wrap(it.a + spin.angle) / spin.step, R, PR);
+        it.slot.visible = vis > 0.01; it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3 + it.k * 0.03) * vis)); it.card.position.set(0, cardY + Math.sin(t * 0.8 + it.i * 1.3) * 0.02, front * 0.3);
         it.frame.material.opacity = front * 0.5 + it.k * 0.45; it.front.color.setScalar(0.8 + front * 0.2);
         if (vis > 0.01) crisp.place(it.o, it.card, SW / 2, SH / 2, 0.036, 0.8 + front * 0.2); else crisp.off(it.o);
       }

@@ -2,10 +2,10 @@
 // والتمارين اللي عليها علامة التشغيل تشتغل داخل الموقع مباشرة. على الجوال: كرت كبير في النص والتنقل بالأسهم.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { C, damp, clamp, easeOut, Spinner, softFloor, crispLayer } from './lib.js';
+import { C, damp, clamp, easeOut, Spinner, softFloor, crispLayer, onWheel } from './lib.js';
 import { EXERCISES, LIBRARY } from './content.js';
 
-const CW = 1.5, CH = 1.875, TEX_W = 600, TEX_H = 750, IMG_H = 430, PER = 5, GAPX = 0.22; // PER: عدد الكروت في كل رف
+const CW = 1.5, CH = 1.875, TEX_W = 600, TEX_H = 750, IMG_H = 430, PER = 5, GAPX = 0.22, PR = 2.2; // PER: عدد الكروت في كل رف
 const TWO = Math.PI * 2, wrap = (x) => ((x + Math.PI) % TWO + TWO) % TWO - Math.PI, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // غلاف التمرين: مساحة الصورة فوق (تدرج بألوان إرث ورقم التمرين لين تجهز الصورة)، والاسم والمنطقة تحت
@@ -68,7 +68,7 @@ export default function createLibrary(ctx) {
       if (carousel) { it.slot.position.set(Math.sin(it.a) * R, 0, Math.cos(it.a) * R); it.slot.rotation.y = it.a; }
       else { it.slot.position.set(0, 0, 0); it.slot.rotation.y = 0; it.base.set(((PER - 1) / 2 - it.col) * (CW + GAPX), ROW_Y[it.row] + CH / 2 + 0.015, 0.1); } // من اليمين لليسار
     });
-    ring.rotation.y = 0; floor.position.set(0, 0, carousel ? R : 0.5); floor.scale.setScalar(carousel ? 0.7 : 1.1);
+    ring.rotation.y = 0; floor.position.set(0, 0, carousel ? R - PR : 0.5); floor.scale.setScalar(carousel ? 0.87 : 1.1);
     st.view = carousel ? { look: [0, 1.5, R + 0.3], dir: [0, 0.05, 1], fitW: 2.0, fitH: 2.45 } : { look: [0, 2.42, 0], dir: [0.09, 0.05, 1], fitW: ROW_W + 0.6, fitH: 5.4 };
   }
   const st = {
@@ -79,11 +79,12 @@ export default function createLibrary(ctx) {
     update(dt, t) {
       inT += dt; crisp.show();
       if (carousel) {
-        spin.update(dt, !!hover); ring.rotation.y = spin.angle; let near = null, nd = 9;
+        spin.update(dt, !!hover); ring.rotation.y = 0; let near = null, nd = 9;
         for (const it of items) {
           it.k = damp(it.k, it === hover ? 1 : 0, 8, dt);
           const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d); if (d < nd) { nd = d; near = it; }
-          it.slot.visible = vis > 0.01; it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3) * vis)); it.card.position.set(0, 1.5, front * 0.6); it.card.rotation.set(0, 0, 0);
+          onWheel(it.slot, wrap(it.a + spin.angle) / spin.step, R, PR);
+          it.slot.visible = vis > 0.01; it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3) * vis)); it.card.position.set(0, 1.5, front * 0.3); it.card.rotation.set(0, 0, 0);
           it.frame.material.opacity = front * 0.5; it.front.color.setScalar(0.82 + front * 0.18);
           if (vis > 0.01) crisp.place(it.o, it.card, CW / 2, CH / 2, 0.031, 0.82 + front * 0.18); else crisp.off(it.o);
         }
