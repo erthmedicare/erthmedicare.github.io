@@ -7,7 +7,8 @@ import { vert } from './content.js';
 const ORDER = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 't10', 't11', 't12', 'l1', 'l2', 'l3', 'l4', 'l5'];
 const PICK = ['c3', 'c5', 'c7', 't3', 't6', 't9', 't12', 'l2', 'l4']; // فقرة لكل قسم
 const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
-export const OUT = 0.46, IN = 0.8; // ثواني: خروج القسم الحالي، ودخول القسم الجديد
+export const OUT = 0.46, IN = 0.8;
+const VERTEBRA = false; // الفقرة اللي كانت تمر بين الأقسام انشالت (قراره 2026-11-12): كل قسم يدخل بحركته من محتواه، والانتقال أخف بدون عنصر زيادة ينرسم فوق القسمين // // ثواني: خروج القسم الحالي، ودخول القسم الجديد
 
 // نلقى فتحة الفقرة: نسقط كل مثلثاتها على مستوى عمودي على اتجاه العمود، والفراغ المحاط بالعظم هو القناة
 function analyse(mesh, T) {
@@ -62,8 +63,8 @@ export function createFx({ skeleton, scene, textEl }) {
 
   // الفقرات: كل قسم له فقرته
   const boneMat = new THREE.MeshPhysicalMaterial({ color: 0xd2c6ad, roughness: 0.55, metalness: 0, clearcoat: 0.3, clearcoatRoughness: 0.4, transparent: true });
-  const centers = ORDER.map((code) => { const m = skeleton.getObjectByName(vert(code)); return m ? new THREE.Box3().setFromBufferAttribute(m.geometry.attributes.position).applyMatrix4(m.matrix).getCenter(new THREE.Vector3()) : null; });
-  const objs = PICK.map((code) => {
+  const centers = !VERTEBRA ? [] : ORDER.map((code) => { const m = skeleton.getObjectByName(vert(code)); return m ? new THREE.Box3().setFromBufferAttribute(m.geometry.attributes.position).applyMatrix4(m.matrix).getCenter(new THREE.Vector3()) : null; });
+  const objs = !VERTEBRA ? [] : PICK.map((code) => {
     const k = ORDER.indexOf(code), src = skeleton.getObjectByName(vert(code)), up = centers[Math.max(0, k - 1)], dn = centers[Math.min(ORDER.length - 1, k + 1)];
     if (!src || !up || !dn) return null;
     let info = null; try { info = analyse(src, new THREE.Vector3().subVectors(up, dn).normalize()); } catch (e) { console.warn('fx', e); }
@@ -82,6 +83,7 @@ export function createFx({ skeleton, scene, textEl }) {
   const api = {
     scene: fxScene, camera: cam,
     get active() { return active; },
+    get drawn() { return active && !!obj; }, // فيه مجسم ينرسم فوق المشهد؟ (الاسم والرقم لحالهم ما يحتاجوا مرور رسم)
     showAll(v) { objs.forEach((o) => { if (o) o.visible = v; }); },
     resize(w, h, fov) { W = w; H = h; cam.aspect = w / h; cam.fov = fov; cam.updateProjectionMatrix(); tanH = Math.tan(THREE.MathUtils.degToRad(fov) / 2); },
     play(i, isBack) { obj = reduced ? null : objs[i] || fallback; dir = isBack ? -1 : 1; t = 0; active = true; api.update(0); },

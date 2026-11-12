@@ -145,6 +145,7 @@ const BUILD = {
 
 const TWO = Math.PI * 2, wrap = (x) => ((x + Math.PI) % TWO + TWO) % TWO - Math.PI, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
+const ent = (T, d, d0, k) => { if (T >= 9) return 1; const x = Math.min(1, Math.max(0, (T - d0 - d * k) / 0.8)); return 1 - Math.pow(1 - x, 3); }; // دخلة القسم: اللي في النص أول، وبعده اللي على الجنبين
 export default function createTools(ctx) {
   const { ui } = ctx, { P } = ui;
   const group = new THREE.Group(), ring = new THREE.Group(), pickables = [], items = [], spin = new Spinner((Math.PI * 2) / TOOLS.length), R = 4.3;
@@ -160,7 +161,7 @@ export default function createTools(ctx) {
     built.anim && built.anim(0, 0);
   });
 
-  let hover = null, sel = null; const world = new THREE.Vector3(), scr = {}, e = new THREE.Euler(), _pur = new THREE.Color(C.purple);
+  let hover = null, sel = null, entT = 9; const world = new THREE.Vector3(), scr = {}, e = new THREE.Euler(), _pur = new THREE.Color(C.purple);
   // أسهم التنقل بين العناصر
   const nav = ui.el('div', 'seg glass'); const bPrev = ui.el('button', '', '› السابق'), bNext = ui.el('button', '', 'التالي ‹');
   bPrev.onclick = () => { if (sel) ui.closePanel(); spin.stepBy(1); }; bNext.onclick = () => { if (sel) ui.closePanel(); spin.stepBy(-1); }; nav.append(bPrev, bNext);
@@ -174,20 +175,20 @@ export default function createTools(ctx) {
     { onClose: (rep) => { if (!rep || sel === it) { sel = null; spin.target = null; } }, leader: () => { it.lift.getWorldPosition(world); world.y += 0.9; const p = ctx.project(world, scr); return p.behind ? null : p; } });
   }
   const st = {
-    id: 'tools', group, pickables, tools: nav,
+    id: 'tools', group, pickables, tools: nav, ownIntro: true,
     view: { look: [0, 1.25, R - 0.9], dir: [0, 0.2, 1], fitW: 8.6, fitH: 4.4 },
     resize() { PR = ctx.mobile() ? 2.2 : 2.5; floor.position.set(0, 0, R - PR); floor.scale.setScalar((PR + 1.15) / (0.64 * 4.4)); st.view = ctx.mobile() ? { look: [0, 1.15, R + 0.2], dir: [0, 0.16, 1], fitW: 3.3, fitH: 3.5 } : { look: [0, 1.2, R + 0.2], dir: [0, 0.13, 1], fitW: 6.6, fitH: 3.6 }; },
-    enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // المنصة تدور لمكانها عند الدخول
+    enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 0.6; spin.vel = 0; spin.target = base; entT = 0; }, // دخلة القسم: كل أداة تطلع من قاعدتها
     leave() { hover = sel = null; spin.target = null; },
     update(dt, t) {
-      spin.update(dt, !!hover); ring.rotation.y = 0;
+      spin.update(dt, !!hover); ring.rotation.y = 0; if (entT < 9) { entT += dt; if (entT > 2.8) entT = 9; }
       for (const it of items) {
-        const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d);
+        const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d), en = ent(entT, d, 0.1, 0.18);
         onWheel(it.slot, wrap(it.a + spin.angle) / spin.step, R, PR);
         it.slot.visible = vis > 0.01; it.slot.scale.setScalar(Math.max(0.001, vis));
         // الأداة اللي في النص تنفرد لحالها، والباقي تنفرد عند التأشير
-        const on = it === hover || it === sel || (front > 0.93 && !hover && !sel); it.k = damp(it.k, on ? 1 : 0, 5, dt); const k = it.k;
-        it.lift.position.y = k * 0.16 + Math.sin(t * 1.1 + it.a * 3) * 0.02; it.lift.position.z = front * 0.15; it.lift.scale.setScalar((0.78 + front * 0.42) * (1 + k * 0.06)); it.lift.rotation.y = Math.sin(t * 0.6 + it.a) * 0.12 * (1 - k);
+        const on = it === hover || it === sel || (front > 0.93 && !hover && !sel && en > 0.98); it.k = damp(it.k, on ? 1 : 0, 5, dt); const k = it.k;
+        it.lift.position.y = k * 0.16 + Math.sin(t * 1.1 + it.a * 3) * 0.02 - (1 - en) * 0.55; it.lift.position.z = front * 0.15; it.lift.scale.setScalar((0.78 + front * 0.42) * (1 + k * 0.06) * Math.max(0.001, en + Math.sin(en * Math.PI) * 0.1)); it.lift.rotation.y = Math.sin(t * 0.6 + it.a) * 0.12 * (1 - k) + (1 - en) * 2.4;
         it.ring.material.color.set(C.teal).lerp(_pur, k);
         if (k > 0.001 || it.dirty) {
           for (const p of it.built.parts) { p.obj.position.lerpVectors(p.p0, p.p1, k); p.obj.scale.lerpVectors(p.s0, p.s1, k); e.set(p.r0.x + (p.r1.x - p.r0.x) * k, p.r0.y + (p.r1.y - p.r0.y) * k, p.r0.z + (p.r1.z - p.r0.z) * k); p.obj.rotation.copy(e); }

@@ -136,10 +136,7 @@ function viewTarget(st) {
 
 // الانتقال: مجسمات القسم الحالي تطلع من المسرح والقسم الجديد يدخل بحركة مختلفة في كل مرة.
 // الخلفية ما تتغطى أبداً، والحركة بين كل قسمين لها شكلها: طلوع، ابتعاد في الضباب، لفّة، انسحاب للجنب...
-const MOVES = [
-  { y: 5.6, z: -5 }, { z: -44, s: 0.72 }, { x: -9.5, ry: 1.0, z: -4 }, { y: -5.6, z: -5 },
-  { z: -30, ry: -1.5, s: 0.5 }, { x: -10, y: 2.2, s: 0.82 }, { y: 6, ry: 0.8, z: -10 }, { z: -44, y: -2, s: 0.72 },
-];
+const MOVE = { y: 3.4, z: -9, s: 0.9 }; // حركة وحدة خفيفة لكل الانتقالات: القسم ينسحب بهدوء، والتنويع يجي من دخلة كل قسم بمحتواه (ownIntro)
 let enterT = 9, shadowNow = true, trans = null;
 // المقدمة عند أول فتح للموقع: الكاميرا تبدأ قريبة من الحوض وتطلع مع العمود وهو يتركب فقرة فقرة، بعدين تبعد ويدخل الكلام
 const INTRO = 3.6; let introT = 9, introRate = 1;
@@ -153,7 +150,7 @@ function pose(st, mv, k, flip) { // k: 0 في مكانه، 1 برا المسرح
 function go(i) {
   i = clamp(i, 0, stations.length - 1); if (!started || i === current || switching) return;
   ui.closePanel(); ui.hideTip(); setHover(null); switching = true; ui.setFxLabel(i); ui.fxOn(true);
-  trans = { to: i, t: 0, phase: 0, mv: MOVES[Math.min(current, i) % MOVES.length], dir: i > current ? 1 : -1 };
+  trans = { to: i, t: 0, phase: 0, mv: MOVE, dir: i > current ? 1 : -1 };
   fx && fx.play(i, i < current);
 }
 function runTrans(dt) {
@@ -244,7 +241,7 @@ function resize() {
 // ── الحلقة ──
 let time = 0, lastNow = 0, frameNo = 0, wasBlocked = false;
 let paused = false; // للفحص: نوقف الحركة ونحرك الإطارات يدوياً
-const draw = () => post.render(scene, camera, fx && fx.active ? fx : null, time);
+const draw = () => post.render(scene, camera, fx && fx.drawn ? fx : null, time);
 let rafNo = 0;
 function frame(now) { requestAnimationFrame(frame); if (div > 1 && rafNo++ % div) return; step(now); }
 function step(now) {
@@ -274,7 +271,7 @@ function tick(dt) {
   const par = coarse ? 0 : camD * 0.022;
   camera.position.set(camPos.x + pointer.x * par, camPos.y + pointer.y * par * 0.6, camPos.z); camera.lookAt(camLook);
   camera.setViewOffset(W, H, (0.5 - stage.cx) * W, (0.5 - stage.cy) * H, W, H);
-  if (fx && fx.active) fx.camera.setViewOffset(W, H, (0.5 - stage.cx) * W, (0.5 - stage.cy) * H, W, H); // الفقرة في نص المسرح، مو نص الشاشة
+  if (fx && fx.drawn) fx.camera.setViewOffset(W, H, (0.5 - stage.cx) * W, (0.5 - stage.cy) * H, W, H); // الفقرة في نص المسرح، مو نص الشاشة
   bg.position.copy(camera.position); bg.material.uniforms.time.value = t;
   placeLights(st);
   camera.updateMatrixWorld();
@@ -332,7 +329,7 @@ async function start() {
   // مساحة المجسمات تنقاس من جديد الآن: القياس الأول صار قبل ما ينكتب عنوان القسم وتتحمل الخطوط، فكان الكلام يتراكب مع المجسم عند أول فتح
   ui.stageDirty(4000); document.fonts.ready.then(() => ui.stageDirty(2500)).catch(() => {}); addEventListener('load', () => ui.stageDirty(2500)); addEventListener('orientationchange', () => ui.stageDirty(2500));
   requestAnimationFrame(frame);
-  { if (LI && LI.leave) LI.leave(); else document.getElementById('loader').classList.add('done'); const s0 = stations[current]; s0.enter && s0.enter(); enterT = 0; if (s0.ownIntro && document.body.classList.contains('intro')) introT = 0; else endIntro(); if (!s0.ownIntro) { trans = { to: current, t: 0, phase: 1, mv: MOVES[3], dir: 1 }; switching = true; ui.fxIn(true); } }
+  { if (LI && LI.leave) LI.leave(); else document.getElementById('loader').classList.add('done'); const s0 = stations[current]; s0.enter && s0.enter(); enterT = 0; if (s0.ownIntro && document.body.classList.contains('intro')) introT = 0; else endIntro(); if (!s0.ownIntro) { trans = { to: current, t: 0, phase: 1, mv: MOVE, dir: 1 }; switching = true; ui.fxIn(true); } }
   // ── في الخلفية ──
   const calm = () => new Promise((res) => { const w = () => (introT < INTRO || switching || enterT < 1.2 ? setTimeout(w, 300) : res()); w(); }); // ننتظر لين تهدأ الحركة عشان التجهيز ما يقطّعها
   const warmRT = new THREE.WebGLRenderTarget(64, 64);

@@ -13,6 +13,7 @@ const adj = (m) => [m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] *
 const mm = (a, b) => { const c = new Array(9); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) c[3 * i + j] = a[3 * i] * b[j] + a[3 * i + 1] * b[3 + j] + a[3 * i + 2] * b[6 + j]; return c; };
 const basis = (p) => { const m = [p[0], p[2], p[4], p[1], p[3], p[5], 1, 1, 1], a = adj(m), x = p[6], y = p[7], v0 = a[0] * x + a[1] * y + a[2], v1 = a[3] * x + a[4] * y + a[5], v2 = a[6] * x + a[7] * y + a[8]; return mm(m, [v0, 0, 0, 0, v1, 0, 0, 0, v2]); };
 
+const ent = (T, d, d0, k) => { if (T >= 9) return 1; const x = Math.min(1, Math.max(0, (T - d0 - d * k) / 0.8)); return 1 - Math.pow(1 - x, 3); }; // دخلة القسم: اللي في النص أول، وبعده اللي على الجنبين
 export default function createTeam(ctx) {
   const { ui } = ctx;
   // المشهد ثلاثي الأبعاد ينرسم بدقة أقل من الشاشة على الأجهزة الضعيفة والجوال، فالوجوه تطلع مغبشة.
@@ -49,7 +50,7 @@ export default function createTeam(ctx) {
   });
   const floor = softFloor(4.6); floor.position.set(0, 0, R - PR); floor.scale.setScalar(1.24); group.add(floor);
 
-  let hover = null, sel = null, loaded = false, shown = null; const world = new THREE.Vector3(), scr = {};
+  let hover = null, sel = null, loaded = false, shown = null, entT = 9; const world = new THREE.Vector3(), scr = {};
   // أسهم التنقل، وبينها اسم الأخصائي اللي في النص (الاسم برا الصورة)
   const nav = ui.el('div', 'seg glass'); const bPrev = ui.el('button', '', '› السابق'), bNext = ui.el('button', '', 'التالي ‹'), who = ui.el('button', 'who', '<b></b><small></small>');
   bPrev.onclick = () => { if (sel) ui.closePanel(); spin.stepBy(1); }; bNext.onclick = () => { if (sel) ui.closePanel(); spin.stepBy(-1); }; who.onclick = () => { if (shown) open(shown); }; nav.append(bPrev, who, bNext);
@@ -59,21 +60,21 @@ export default function createTeam(ctx) {
     ui.openPanel(ui.personNodes(it.t), { onClose: (rep) => { if (!rep || sel === it) { sel = null; spin.target = null; } }, leader: () => { it.card.getWorldPosition(world); const p = ctx.project(world, scr); return p.behind ? null : p; } });
   }
   const st = {
-    id: 'team', group, pickables, view: null, tools: nav,
+    id: 'team', group, pickables, view: null, tools: nav, ownIntro: true,
     prepare() { if (loaded) return; loaded = true; items.forEach((it) => { const tx = loadTexture(`assets/img/team/${it.t.id}-photo.webp`, () => { it.front.map = tx; it.front.color.set(0xffffff); it.front.needsUpdate = true; }); }); },
     resize() { PR = ctx.mobile() ? 2.15 : 3.2; floor.position.set(0, 0, R - PR); floor.scale.setScalar((PR + (ctx.mobile() ? 0.85 : 0.45)) / (0.64 * 4.6)); st.view = ctx.mobile() ? { look: [0, 1.85, R + 0.3], dir: [0, 0.05, 1], fitW: 3.3, fitH: 4.0 } : { look: [0, 1.88, R + 0.3], dir: [0, 0.05, 1], fitW: 7.3, fitH: 3.7 }; },
-    enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // الكروت تنزلق لمكانها عند الدخول
+    enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 0.6; spin.vel = 0; spin.target = base; entT = 0; }, // دخلة القسم: كل كرت ينزل وهو يلف ويوقف على المنصة
     leave() { hover = sel = null; spin.target = null; layerOn = false; layer.style.display = 'none'; },
     update(dt) {
-      spin.update(dt, !!hover); ring.rotation.y = 0;
+      spin.update(dt, !!hover); ring.rotation.y = 0; if (entT < 9) { entT += dt; if (entT > 2.6) entT = 9; }
       let near = null, nd = 9;
       for (const it of items) {
         const on = it === hover || it === sel; it.k = damp(it.k, on ? 1 : 0, 7, dt);
-        const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d);
+        const d = Math.abs(wrap(it.a + spin.angle)) / spin.step, vis = 1 - sstep(1.3, 1.85, d), front = Math.max(0, 1 - d), en = ent(entT, d, 0.06, 0.16);
         onWheel(it.slot, wrap(it.a + spin.angle) / spin.step, R, PR);
         if (d < nd) { nd = d; near = it; }
         it.slot.visible = vis > 0.01;
-        it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3 + it.k * 0.05) * vis)); it.card.position.z = it.k * 0.3 + front * 0.35; it.card.position.y = 1.85 + it.k * 0.06;
+        it.card.scale.setScalar(Math.max(0.001, (0.8 + front * 0.3 + it.k * 0.05) * vis * (en > 0 ? 0.55 + 0.45 * en : 0))); it.card.rotation.y = (1 - en) * Math.PI * 1.5; it.card.position.z = it.k * 0.3 + front * 0.35; it.card.position.y = 1.85 + it.k * 0.06 + (1 - en) * 1.5;
         it.frame.material.opacity = front * 0.55 + it.k * 0.45; if (it.front.map) it.front.color.setScalar(0.8 + front * 0.2);
         if (vis > 0.01) { const w = photoAt(it, 0.8 + front * 0.2); if (w && d < 0.02 && it.k < 0.02 && Math.abs(w - bw) > bw * 0.08) setBase(Math.round(w)); } else photoOff(it);
       }
