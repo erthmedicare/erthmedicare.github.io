@@ -40,7 +40,7 @@ export default function createAbout(ctx) {
     ui.openPanel(nodes, { onClose: (replaced) => { if (!replaced || sel === it) sel = null; }, leader: () => { it.g.getWorldPosition(world); const p = ctx.project(world, scr); return p.behind ? null : p; } });
   }
   const st = {
-    id: 'about', group, pickables, view: null, resize: layout,
+    id: 'about', group, pickables, view: null, resize: layout, titleExtra(acts) { acts.before(ctx.ui.chips('values')); },
     enter() { active = true; inT = 0; items.forEach((it) => { it.label.style.display = ''; }); },
     leave() { active = false; sel = null; hover = null; items.forEach((it) => { it.label.style.display = 'none'; }); },
     update(dt, t, on) {

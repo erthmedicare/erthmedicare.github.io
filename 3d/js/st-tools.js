@@ -175,9 +175,9 @@ export default function createTools(ctx) {
     { onClose: (rep) => { if (!rep || sel === it) { sel = null; spin.target = null; } }, leader: () => { it.lift.getWorldPosition(world); world.y += 0.9; const p = ctx.project(world, scr); return p.behind ? null : p; } });
   }
   const st = {
-    id: 'tools', group, pickables, tools: nav, ownIntro: true,
+    id: 'tools', group, pickables, tools: nav, ownIntro: true, toolsAnchor: [0, -0.12, R + 1.3],
     view: { look: [0, 1.25, R - 0.9], dir: [0, 0.2, 1], fitW: 8.6, fitH: 4.4 },
-    resize() { PR = ctx.mobile() ? 2.2 : 2.5; floor.position.set(0, 0, R - PR); floor.scale.setScalar((PR + 1.15) / (0.64 * 4.4)); st.view = ctx.mobile() ? { look: [0, 1.15, R + 0.2], dir: [0, 0.16, 1], fitW: 3.3, fitH: 3.5 } : { look: [0, 1.2, R + 0.2], dir: [0, 0.13, 1], fitW: 6.6, fitH: 3.6 }; },
+    resize() { PR = ctx.mobile() ? 2.2 : 2.5; floor.position.set(0, 0, R - PR); floor.scale.setScalar((PR + 1.15) / (0.64 * 4.4)); st.view = ctx.mobile() ? { look: [0, 1.15, R + 0.2], dir: [0, 0.16, 1], fitW: 3.3, fitH: 3.5 } : { look: [0, 1.2, R + 0.2], dir: [0, 0.13, 1], fitW: 6.2, fitH: 3.6 }; },
     enter() { const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 0.6; spin.vel = 0; spin.target = base; entT = 0; }, // دخلة القسم: كل أداة تطلع من قاعدتها
     leave() { hover = sel = null; spin.target = null; },
     update(dt, t) {

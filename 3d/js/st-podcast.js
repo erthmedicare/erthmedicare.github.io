@@ -68,10 +68,10 @@ export default function createPodcast(ctx) {
     // الحلقات مرفوعة وتدور على محيط المنصة. المايك واقف على المنصة: على اللابتوب جنب الحلقة اللي في النص، وعلى الجوال تحتها
     micPod.visible = false; mic.rotation.y = -0.5;
     if (m) { cardY = 2.45; mic.position.set(0, 0, R + 0.05); mic.scale.setScalar(0.5); st.view = { look: [0, 1.9, R + 0.3], dir: [0, 0.04, 1], fitW: 2.85, fitH: 3.8 }; }
-    else { cardY = 2.2; mic.position.set(1.62, 0, R - 0.35); mic.scale.setScalar(0.52); st.view = { look: [0, 1.82, R + 0.3], dir: [0, 0.04, 1], fitW: 6.6, fitH: 3.8 }; }
+    else { cardY = 2.2; mic.position.set(1.62, 0, R - 0.35); mic.scale.setScalar(0.52); st.view = { look: [0, 1.82, R + 0.3], dir: [0, 0.04, 1], fitW: 6.0, fitH: 3.8 }; }
   }
   const st = {
-    id: 'podcast', group, pickables, view: null, tools: nav, resize: layout,
+    id: 'podcast', group, pickables, view: null, tools: nav, resize: layout, toolsAnchor: [0, -0.12, R + 0.45],
     prepare() { if (loaded) return; loaded = true; items.forEach((it) => { it.front.map = face(it.ep); it.front.needsUpdate = true; ctx.renderer.initTexture(it.front.map); }); },
     enter() { ui.warmVideo(); const base = Math.round(spin.angle / spin.step) * spin.step; spin.angle = base + spin.step * 1.5; spin.vel = 0; spin.target = base; }, // الكروت تنزلق لمكانها عند الدخول
     leave() { hover = null; spin.target = null; crisp.hide(); },

@@ -231,7 +231,7 @@ export default function createBody(ctx) {
   const turn = ui.el('button', '', 'لفّ الجسم ↻'); turn.onclick = () => { rotT += Math.PI; }; seg.append(turn);
 
   const st = {
-    id: 'body', group, pickables, fastPick: true, view: views.muscle, focus: null, tools: seg,
+    id: 'body', group, pickables, fastPick: true, view: views.muscle, focus: null, tools: seg, toolsAnchor: [0, -0.1, 2.05],
     resize() { vw = innerWidth; hsEls.forEach((h) => { h.bw = 0; }); },
     // ظل الجسم (مئات آلاف المثلثات) ينعاد رسمه بس لما الجسم يلف أو يتغير، مو كل فريم
     shadowDirty() {
@@ -307,6 +307,7 @@ export default function createBody(ctx) {
       }
     },
     titleExtra(acts) {
+      acts.before(ui.chips('mission'));
       acts.append(ui.button('خدماتنا العلاجية', 'primary', () => ui.openPanel(ui.serviceNodes((id) => st.select(id)))), ui.button('احجز تقييمك', 'line', () => ui.openBooking()));
     },
   };

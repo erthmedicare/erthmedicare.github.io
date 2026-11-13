@@ -460,3 +460,8 @@ body.intro-done :is(#dock, #rail) { animation: introFade 1s ease both; }
   #counter { transform: translateY(-7px); }
   body.menu-open #rail, body.panel-open #rail { opacity: 0; }
 }
+
+/* ── نسخة 28: كلمات قصيرة تحت وصف القسم على الشاشات الكبيرة، تعبّي عمود الكلام بدون حشو ── */
+.t-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; max-width: 30em; }
+.t-chips span { padding: 6px 15px; border-radius: 999px; background: rgba(255,255,255,.72); border: 1px solid var(--edge); font-size: clamp(13px, 1vw, 15px); font-weight: 600; color: var(--text); }
+@media (max-width: 860px) { .t-chips { display: none; } }
