@@ -82,7 +82,7 @@ export function stageRect(mobile, hasTools) {
     r = state.panelOpen ? { l: 0, r: W, t: 62, b: H * 0.335 } : { l: 6, r: W - 6, t: Math.min(tb.bottom + 8, H * 0.42), b: H - (hasTools ? 150 : 118) };
   } else {
     const edge = (state.panelOpen ? panel : title).getBoundingClientRect().left;
-    r = { l: 58, r: Math.max(360, edge - 34), t: 92, b: H - (hasTools ? 96 : 34) };
+    r = { l: 92, r: Math.max(360, edge - 34), t: 92, b: H - (hasTools ? 104 : 34) }; // l: مسافة تكفي العمود الصغير اللي على الحافة، عشان المجسمات ما تجي عليه
   }
   const cx = Math.round((r.l + r.r) / 2), cy = Math.round((r.t + r.b) / 2); if (cx !== stageCx || cy !== stageCy) { stageCx = cx; stageCy = cy; const ds = document.documentElement.style; ds.setProperty('--stage-cx', cx + 'px'); ds.setProperty('--stage-cy', cy + 'px'); }
   return (stageCache = r);

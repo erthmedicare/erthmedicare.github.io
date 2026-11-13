@@ -189,6 +189,8 @@ export default function createBody(ctx) {
     joint: { look: [0, 2.14, 0], dir: [0, 0.03, 1], fitW: 4.3, fitH: 4.5 },
     spine: { look: [0, 2.9, 0], dir: [0, 0.03, 1], fitW: 2.9, fitH: 2.4 },
   };
+  // على الشاشات الكبيرة المنصة لازم تبان كاملة فوق شريط الأزرار (كانت تنزل تحته وتتداخل معه)
+  const fitViews = () => { const d = !ctx.mobile(); for (const k of ['muscle', 'joint']) { views[k].fitH = d ? 5.2 : 4.5; views[k].look[1] = d ? 1.9 : 2.14; } }; fitViews(); addEventListener('resize', fitViews);
   const pickables = [];
   function setGroup(g, force) {
     if (g === mode && !force) return; mode = g; hover = null;
