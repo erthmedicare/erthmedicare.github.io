@@ -34,7 +34,7 @@ export default function createContact(ctx) {
   // الشعار ينرسم كمان كصورة HTML فوق مكانه: يطلع بألوانه الصريحة وبدقة الشاشة الكاملة
   const crisp = crispLayer(ctx, 'con'), logoImg = new Image(); logoImg.src = 'assets/img/erth-logo.webp'; logoImg.alt = ''; logoImg.draggable = false; const lo = crisp.add(logoImg, 270, 382);
   const gems = [0, 1, 2].map((i) => { const g = crystal(0.34, i === 1 ? C.teal : C.purple); group.add(g); return g; });
-  const pod = podium(4.2, C.teal); group.add(pod);
+  group.add(podium(4.2, C.teal));
   const geo = new RoundedBoxGeometry(1.2, 1.2, 0.34, 5, 0.17);
   CHANNELS.forEach((ch, i) => {
     const mat = new THREE.MeshPhysicalMaterial({ color: 0x2a3180, metalness: 0.35, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08, emissive: ch.color, emissiveIntensity: 0.12, envMapIntensity: 1.6 });
@@ -46,9 +46,8 @@ export default function createContact(ctx) {
   let hover = null;
   function layout() {
     const m = ctx.mobile();
-    if (m) { pod.scale.setScalar(1); items.forEach((it, i) => it.base.set((i % 3 - 1) * 1.75, 3.35 - Math.floor(i / 3) * 2.0, 0.6)); logo.position.set(0, 6.05, -0.4); logo.scale.setScalar(0.92); st.view = { look: [0, 3.95, 0], dir: [0, 0.03, 1], fitW: 5.6, fitH: 8.0 }; }
-    // الشاشات الكبيرة: قوس أوسع عشان المكعبات وأسماؤها ما تركب على بعض، والمنصة أصغر عشان تبان كاملة
-    else { pod.scale.setScalar(0.72); items.forEach((it, i) => { const th = (i - 2.5) * 0.21; it.base.set(Math.sin(th) * 9, 1.95, Math.cos(th) * 9 - 8.2); }); logo.position.set(0, 4.9, -0.9); logo.scale.setScalar(0.92); st.view = { look: [0, 2.65, 0], dir: [0, 0.05, 1], fitW: 10.6, fitH: 7.8 }; }
+    if (m) { items.forEach((it, i) => it.base.set((i % 3 - 1) * 1.75, 3.35 - Math.floor(i / 3) * 2.0, 0.6)); logo.position.set(0, 6.05, -0.4); logo.scale.setScalar(0.92); st.view = { look: [0, 3.95, 0], dir: [0, 0.03, 1], fitW: 5.6, fitH: 8.0 }; }
+    else { items.forEach((it, i) => { const th = (i - 2.5) * 0.3; it.base.set(Math.sin(th) * 6, 1.55, Math.cos(th) * 6 - 5.2); }); logo.position.set(0, 4.55, -0.9); logo.scale.setScalar(0.92); st.view = { look: [0, 3.05, 0], dir: [0, 0.05, 1], fitW: 10.4, fitH: 6.5 }; }
   }
   const st = {
     id: 'contact', group, pickables, view: null, resize: layout,

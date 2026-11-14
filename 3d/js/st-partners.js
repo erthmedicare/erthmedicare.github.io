@@ -41,8 +41,8 @@ export default function createPartners(ctx) {
     items.forEach((it) => { it.col = it.i % cols; it.row = Math.floor(it.i / cols); const n = it.row === rows - 1 ? lastN : cols; it.base.set((n - 1) / 2 * (TW + GAP) - it.col * (TW + GAP), h / 2 - TH / 2 - it.row * (TH + GAP), 0.13); }); // من اليمين لليسار
     if (slab) { wall.remove(slab); slab.geometry.dispose(); }
     slab = new THREE.Mesh(new RoundedBoxGeometry(w + pad * 2, h + pad * 2, 0.1, 4, 0.05), slabMat); slab.castShadow = slab.receiveShadow = true; wall.add(slab);
-    wall.position.y = cy; floor.position.set(0, 0, 0.4); floor.scale.setScalar(m ? 0.8 : 0.85);
-    st.view = m ? { look: [0, cy, 0], dir: [0, 0.03, 1], fitW: w + 1.3, fitH: h + 1.5 } : { look: [0, cy - 0.5, 0], dir: [0.1, 0.04, 1], fitW: w + 1.9, fitH: h + 2.7 };
+    wall.position.y = cy; floor.position.set(0, 0, 0.4); floor.scale.setScalar(m ? 0.8 : 1.15);
+    st.view = m ? { look: [0, cy, 0], dir: [0, 0.03, 1], fitW: w + 1.3, fitH: h + 1.5 } : { look: [0, cy - 0.05, 0], dir: [0.1, 0.04, 1], fitW: w + 1.9, fitH: h + 1.6 };
   }
   const st = {
     id: 'partners', group, pickables, view: null, resize: layout,

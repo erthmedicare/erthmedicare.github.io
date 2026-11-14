@@ -104,7 +104,7 @@ const loadGLB = (url, onProg) => B64
   : new Promise((res, rej) => gltf.load(url, (g) => res(g.scene), (e) => onProg && e.total && onProg(e.loaded / e.total), rej));
 
 // ── أدوات يستخدمها كل قسم ──
-const _v = new THREE.Vector3(), _cp = new THREE.Vector3(), _cq = new THREE.Quaternion();
+const _v = new THREE.Vector3();
 const pointer = { x: 0, y: 0, px: -9999, py: -9999, inside: false };
 const ctx = {
   THREE, scene, camera, renderer, mobile, coarse, ui, pointer, loadGLB, assets: {}, stagePx: { l: 0, r: 1, t: 0, b: 1 },
@@ -277,11 +277,6 @@ function tick(dt) {
   bg.position.copy(camera.position); bg.material.uniforms.time.value = t;
   placeLights(st);
   camera.updateMatrixWorld();
-  if (st.toolsAnchor && !mobile()) { // الشاشات الكبيرة: أزرار القسم تلزق تحت منصته مباشرة بدل ما تبقى بعيدة تحت. نحسب مكان حافة المنصة بدون أثر حركة الماوس عشان الأزرار ما تهتز
-    _cp.copy(camera.position); _cq.copy(camera.quaternion); camera.position.copy(camPos); camera.lookAt(camLook); camera.updateMatrixWorld();
-    _v.set(st.home + st.toolsAnchor[0], st.toolsAnchor[1], st.toolsAnchor[2]).project(camera); ui.toolsTop((-_v.y * 0.5 + 0.5) * H);
-    camera.position.copy(_cp); camera.quaternion.copy(_cq); camera.updateMatrixWorld();
-  } else ui.toolsTop(null);
   if (pickDirty && !down && !switching && !ui.blocking()) { const now = performance.now(); if (now - pickAt > 45) { pickAt = now; pickDirty = false; setHover(pick(pointer.px, pointer.py)); } }
   st.update(dt, t, true);
   ui.update();

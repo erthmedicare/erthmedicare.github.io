@@ -1,5 +1,5 @@
 // واجهة الموقع: العناوين، اللوحة، التلميح، القائمة، ونافذة الحجز عبر واتساب.
-import { STATIONS, TEAM, CONTACT, SERVICES, REGIONS, ABOUT } from './content.js';
+import { STATIONS, TEAM, CONTACT, SERVICES, REGIONS } from './content.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -44,7 +44,7 @@ export function setStation(i, extra) {
   title.classList.add('swap'); clearTimeout(titleTimer);
   titleTimer = setTimeout(() => {
     $('#tKicker').textContent = s.kicker; $('#tTitle').textContent = s.title; $('#tTitle').classList.toggle('long', s.title.length > 24); $('#tSub').textContent = s.sub; $('#tSub').style.display = s.sub ? '' : 'none';
-    const acts = $('#tActions'); acts.innerHTML = ''; title.querySelectorAll('.t-list, .t-slogan, .t-chips').forEach((n) => n.remove());
+    const acts = $('#tActions'); acts.innerHTML = ''; title.querySelectorAll('.t-list, .t-slogan').forEach((n) => n.remove());
     if (extra) extra(acts, title);
     $('#hint').textContent = matchMedia('(pointer: coarse)').matches && s.touch ? s.touch : s.hint;
     title.classList.remove('swap'); stageDirty();
@@ -56,12 +56,6 @@ export function setStation(i, extra) {
 export function openLink(url) { const a = document.createElement('a'); a.href = url; if (/^https?:/.test(url)) { a.target = '_blank'; a.rel = 'noopener'; } document.body.append(a); a.click(); a.remove(); }
 export function button(label, cls, fn) { const b = el('button', 'btn ' + cls, esc(label)); b.onclick = fn; return b; }
 export function setTools(node) { const t = $('#stationTools'); t.innerHTML = ''; if (node) t.append(node); body.classList.toggle('has-tools', !!node); stageDirty(); }
-
-// أزرار القسم على الشاشات الكبيرة: مكانها تحت حافة المنصة (y بالبكسل)، أو null لترجع لمكانها الثابت
-let toolsY = null;
-export function toolsTop(y) { const t = $('#stationTools'); if (y == null) { if (toolsY !== null) { toolsY = null; t.style.top = ''; t.style.bottom = ''; } return; } y = Math.round(Math.max(innerHeight * 0.5, Math.min(innerHeight - 80, y + 16))); if (y !== toolsY) { toolsY = y; t.style.top = y + 'px'; t.style.bottom = 'auto'; } }
-// كلمات قصيرة تحت وصف القسم على الشاشات الكبيرة (من نص البروفايل نفسه): قيم إرث، أو خطوات الرسالة
-export function chips(kind) { const a = ABOUT.find((x) => x.id === kind) || {}, arr = a.values ? a.values.map((v) => v[0]) : a.steps || []; return el('div', 't-chips', arr.map((x) => `<span>${esc(x)}</span>`).join('')); }
 
 // ── رقم القسم واسمه أثناء الانتقال ──
 export function setFxLabel(i) { $('#wipeNum').textContent = pad(i + 1); $('#wipeName').textContent = STATIONS[i].nav; }
@@ -88,7 +82,7 @@ export function stageRect(mobile, hasTools) {
     r = state.panelOpen ? { l: 0, r: W, t: 62, b: H * 0.335 } : { l: 6, r: W - 6, t: Math.min(tb.bottom + 8, H * 0.42), b: H - (hasTools ? 150 : 118) };
   } else {
     const edge = (state.panelOpen ? panel : title).getBoundingClientRect().left;
-    r = { l: 92, r: Math.max(360, edge - 34), t: 92, b: H - (hasTools ? 104 : 34) }; // l: مسافة تكفي العمود الصغير اللي على الحافة، عشان المجسمات ما تجي عليه
+    r = { l: 58, r: Math.max(360, edge - 34), t: 92, b: H - (hasTools ? 96 : 34) };
   }
   const cx = Math.round((r.l + r.r) / 2), cy = Math.round((r.t + r.b) / 2); if (cx !== stageCx || cy !== stageCy) { stageCx = cx; stageCy = cy; const ds = document.documentElement.style; ds.setProperty('--stage-cx', cx + 'px'); ds.setProperty('--stage-cy', cy + 'px'); }
   return (stageCache = r);
